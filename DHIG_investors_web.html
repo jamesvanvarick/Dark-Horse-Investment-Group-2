@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investors — Dark Horse Investment Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #e8c832;
+      --bg: rgba(8,8,8,0.95);
+      --border: #2a2a2a;
+      --text: #e8e2d5;
+      --text-dim: #7a7060;
+      --serif: 'Barlow', system-ui, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: #080808; }
+    body { font-family: var(--serif); background: transparent; color: var(--text); min-height: 100vh; }
+
+    .top-banner {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      padding: 0 48px; display: flex; align-items: center; height: 40px;
+    }
+    .top-banner a {
+      font-family: var(--serif); font-size: 11px; letter-spacing: 0.2em;
+      color: var(--text-dim); text-decoration: none; padding: 0 18px;
+      text-transform: uppercase; transition: color 0.2s; height: 100%;
+      display: flex; align-items: center; border-bottom: 1px solid transparent; margin-bottom: -1px;
+    }
+    .top-banner a:hover { color: var(--text); }
+    .top-banner a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    .placeholder {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: calc(100vh - 40px);
+      text-align: center; padding: 48px;
+    }
+    .placeholder-label {
+      font-family: 'Instrument Serif', serif; font-style: italic;
+      font-size: 42px; color: var(--gold); margin-bottom: 16px;
+    }
+    .placeholder-sub {
+      font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-banner">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="investors.html" class="active">Investors</a>
+</div>
+
+<div class="placeholder">
+  <p class="placeholder-label">Investors</p>
+  <p class="placeholder-sub">Coming soon</p>
+</div>
+
+</body>
+</html>

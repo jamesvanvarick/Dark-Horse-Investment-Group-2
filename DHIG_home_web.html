@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dark Horse Investment Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --gold: #e8c832;
+      --gold-light: #f0d84a;
+      --bg: rgba(12,12,12,0.82);
+      --bg2: rgba(20,20,20,0.85);
+      --bg3: rgba(26,26,26,0.90);
+      --border: #2a2a2a;
+      --border-gold: rgba(232,200,50,0.25);
+      --text: #e8e2d5;
+      --text-dim: #7a7060;
+      --green: #4a9e6e;
+      --red: #c45c5c;
+      --mono: 'Barlow', system-ui, sans-serif;
+      --serif: 'Barlow', system-ui, sans-serif;
+      --display: 'Instrument Serif', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { background: #080808; }
+    body {
+      font-family: var(--serif);
+      background: transparent;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Top Banner ── */
+    .top-banner {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8,8,8,0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex;
+      align-items: center;
+      height: 40px;
+    }
+    .top-banner a {
+      font-family: var(--serif);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 0 18px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid transparent;
+      margin-bottom: -1px;
+    }
+    .top-banner a:hover { color: var(--text); }
+    .top-banner a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── Header ── */
+    header {
+      padding: 160px 48px 140px;
+      text-align: center;
+    }
+    .page-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: url('background.jpg');
+      background-size: cover;
+      background-position: center 30%;
+      opacity: 0.07;
+      filter: grayscale(100%);
+      pointer-events: none;
+    }
+    .header-content {
+      position: relative;
+      z-index: 1;
+    }
+    .header-eyebrow {
+      font-family: var(--serif);
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: 20px;
+      margin-bottom: 0;
+    }
+
+    h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(38px, 5vw, 62px);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      line-height: 1.05;
+    }
+    h1 span { color: var(--text); }
+    .header-sub { display: none; }
+
+    /* ── Layout ── */
+    section {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 48px 48px;
+    }
+    section + section { border-top: none; }
+
+    .section-label {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 26px;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      color: var(--gold);
+      font-weight: 400;
+      font-style: italic;
+      margin-bottom: 24px;
+      padding-bottom: 0;
+    }
+
+    /* ── Philosophy ── */
+    .philosophy-lead {
+      font-size: clamp(16px, 1.8vw, 18px);
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 780px;
+      margin-bottom: 40px;
+    }
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+    .pillar {
+      background: transparent;
+      padding: 0;
+    }
+    .pillar-tag {
+      font-family: var(--serif);
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      color: var(--gold);
+      text-transform: none;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .pillar-name { font-size: 18px; font-weight: 400; color: var(--text); margin-bottom: 12px; letter-spacing: -0.01em; }
+    .pillar-body { font-size: 15px; font-weight: 400; line-height: 1.55; color: var(--text); }
+    .pillar-body ul { list-style: none; margin-top: 10px; padding-left: 20px; }
+    .pillar-body ul li { font-size: 17px; font-weight: 500; color: var(--text); line-height: 1.5; padding-left: 16px; text-indent: -16px; }
+    .pillar-body ul li::before { content: '• '; color: var(--text); }
+    .philosophy-close {
+      font-size: clamp(16px, 1.8vw, 18px);
+      font-weight: 400;
+      font-style: normal;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 780px;
+    }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+      background: #111111;
+    }
+    .summary-stat { padding: 20px 22px; border-right: 1px solid var(--border); background: #111111; }
+    .summary-stat:last-child { border-right: none; }
+    .summary-stat-label {
+      font-family: var(--serif);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .summary-stat-value { font-family: var(--serif); font-size: 22px; color: var(--text); }
+
+    /* ── Status ── */
+    .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); animation: pulse 2.5s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .status-text {
+      font-family: var(--serif); font-size: 12px;
+      letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase;
+    }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); background: #111111; }
+    table { width: 100%; border-collapse: collapse; font-family: var(--serif); font-size: 13.5px; background: #111111; }
+    thead th {
+      background: #1a1a1a;
+      color: var(--text-dim);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 12px 14px;
+      text-align: right;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    thead th:first-child { text-align: left; }
+    tbody tr { border-bottom: 1px solid rgba(42,42,42,0.8); transition: background 0.1s; background: #111111; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.04); }
+    tbody td { padding: 10px 14px; text-align: right; color: var(--text); white-space: nowrap; }
+    tbody td:first-child { text-align: left; color: var(--gold-light); }
+    .tag-core, .tag-satellite {
+      display: inline-block; font-size: 8px; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 2px 6px; border-radius: 2px;
+    }
+    .tag-core     { background: rgba(74,158,110,0.12); color: var(--green); border: 1px solid rgba(74,158,110,0.25); }
+    .tag-satellite{ background: rgba(184,151,46,0.1);  color: var(--gold);  border: 1px solid rgba(184,151,46,0.2); }
+    tfoot td {
+      padding: 12px 14px; text-align: right;
+      border-top: 1px solid var(--border); background: var(--bg3);
+      color: var(--text); font-family: var(--serif); font-size: 13.5px;
+    }
+    tfoot td:first-child {
+      text-align: left; color: var(--text-dim);
+      font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    }
+    .positive { color: var(--green) !important; }
+    .negative { color: var(--red)   !important; }
+    .neutral  { color: var(--text-dim) !important; }
+    .q-label  { text-align: left !important; color: var(--text) !important; }
+
+    /* ── Charts ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1px; background: var(--border); border: 1px solid var(--border);
+    }
+    .chart-card { background: var(--bg2); padding: 32px 28px; }
+    .chart-card-title {
+      font-family: var(--serif); font-size: 11px;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 24px;
+    }
+    .chart-canvas-wrap {
+      position: relative; width: 100%; max-width: 300px;
+      aspect-ratio: 1; margin: 0 auto 20px;
+    }
+    .chart-legend { display: flex; flex-direction: column; gap: 7px; }
+    .legend-item  { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text-dim); }
+    .legend-swatch{ width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
+    .legend-pct   { margin-left: auto; color: var(--text); font-family: var(--serif); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 48px;
+      font-family: var(--serif); font-size: 10px;
+      letter-spacing: 0.1em; color: var(--text-dim);
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    @media (max-width: 700px) {
+      nav { padding: 0 16px; }
+      nav a { padding: 14px 10px; font-size: 10px; }
+      header, section { padding: 40px 20px; }
+      .summary-bar { grid-template-columns: repeat(2, 1fr); }
+      .summary-stat:nth-child(2) { border-right: none; }
+      .summary-stat:nth-child(1),
+      .summary-stat:nth-child(2) { border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="top-banner">
+  <a href="index.html" class="active">Home</a>
+  <a href="about.html">About</a>
+  <a href="investors.html">Investors</a>
+</div>
+
+<div class="page-bg"></div>
+<header>
+  <div class="header-content">
+    <h1>Dark Horse Investment Group, LLC</h1>
+    <p class="header-eyebrow">Est. September 2023</p>
+  </div>
+</header>
+
+<!-- Philosophy -->
+<section id="philosophy">
+  <p class="section-label">Our Philosophy</p>
+  <p class="philosophy-lead">At Dark Horse, we believe in a hybrid investment approach that balances long-term discipline with active experimentation, ensuring stability for shareholders and an optimal learning experience for students. Our portfolio is constructed using a core-satellite framework:</p>
+  <div class="pillars">
+    <div class="pillar">
+      <p class="pillar-tag">Core &nbsp;·&nbsp; 60–70%</p>
+      <p class="pillar-body">High-quality companies and ETFs designed to provide steady, long-term growth. These holdings reflect broader market exposure and are selected for their durable business models and consistent performance. They serve as our portfolio's long-term anchor.</p>
+    </div>
+    <div class="pillar">
+      <p class="pillar-tag">Satellite &nbsp;·&nbsp; 20–30%</p>
+      <p class="pillar-body">A platform for active experimentation and higher risk/reward ideas. Satellite positions are intentionally flexible and may include: emerging companies with long-term upside; deep value or contrarian opportunities; macro/event-driven strategies.</p>
+    </div>
+    <div class="pillar">
+      <p class="pillar-tag">Cash &nbsp;·&nbsp; 5–15%</p>
+      <p class="pillar-body">Instills discipline in our capital allocation process and ultimately gives us the flexibility to act quickly when market opportunities arise.</p>
+    </div>
+  </div>
+  <p class="philosophy-close">Together, this structure allows us to remain grounded in fundamentals while encouraging independent thinking, curiosity, and real-world decision-making.</p>
+</section>
+
+<!-- Portfolio -->
+<section id="portfolio">
+  <p class="section-label">Portfolio</p>
+  <div class="status-row">
+    <div class="status-dot"></div>
+    <span class="status-text">Live prices via Finnhub</span>
+  </div>
+  <div class="summary-bar">
+    <div class="summary-stat">
+      <p class="summary-stat-label">Market Value</p>
+      <p class="summary-stat-value" id="s-mv">—</p>
+    </div>
+    <div class="summary-stat">
+      <p class="summary-stat-label">Cost Basis</p>
+      <p class="summary-stat-value" id="s-cb">—</p>
+    </div>
+    <div class="summary-stat">
+      <p class="summary-stat-label">Gain / Loss</p>
+      <p class="summary-stat-value" id="s-gl">—</p>
+    </div>
+    <div class="summary-stat">
+      <p class="summary-stat-label">Return</p>
+      <p class="summary-stat-value" id="s-pct">—</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Category</th>
+          <th>Shares</th>
+          <th>Price</th>
+          <th>Cost Basis</th>
+          <th>Market Value</th>
+          <th>Gain / Loss</th>
+          <th>% Return</th>
+          <th>Portfolio %</th>
+        </tr>
+      </thead>
+      <tbody id="portfolio-body">
+        <tr><td colspan="9" style="text-align:center; padding:32px; color:var(--text-dim); font-size:11px; letter-spacing:0.15em;">Loading positions…</td></tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td>—</td><td>—</td><td>—</td>
+          <td id="f-cb">—</td>
+          <td id="f-mv">—</td>
+          <td id="f-gl">—</td>
+          <td id="f-pct">—</td>
+          <td>100%</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<!-- Exposure -->
+<section id="exposure">
+  <p class="section-label">Exposure</p>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <p class="chart-card-title">Sector Exposure</p>
+      <div class="chart-canvas-wrap"><canvas id="sectorChart"></canvas></div>
+      <div class="chart-legend" id="sector-legend"></div>
+    </div>
+    <div class="chart-card">
+      <p class="chart-card-title">ETF Breakdown</p>
+      <div class="chart-canvas-wrap"><canvas id="etfChart"></canvas></div>
+      <div class="chart-legend" id="etf-legend"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Dark Horse Investment Group &nbsp;·&nbsp; Delaware LLC</span>
+  <span>Data provided by Finnhub &nbsp;·&nbsp; Not financial advice</span>
+</footer>
+
+<script>
+  const API_KEY = 'd10qn8pr01qse6ldf5v0d10qn8pr01qse6ldf5vg';
+
+  const HOLDINGS = [
+    { symbol: "AAON",  shares: 5,       costBasis: 428.53,  category: "Satellite" },
+    { symbol: "AAPL",  shares: 1.0094,  costBasis: 176.30,  category: "Core"      },
+    { symbol: "AMZN",  shares: 3,       costBasis: 396.36,  category: "Core"      },
+    { symbol: "ARM",   shares: 3,       costBasis: 224.75,  category: "Satellite" },
+    { symbol: "BABA",  shares: 2,       costBasis: 144.80,  category: "Satellite" },
+    { symbol: "BIRK",  shares: 2,       costBasis: 89.31,   category: "Satellite" },
+    { symbol: "CAT",   shares: 1,       costBasis: 351.60,  category: "Core"      },
+    { symbol: "CIBR",  shares: 4,       costBasis: 221.40,  category: "Core"      },
+    { symbol: "CRCL",  shares: 4,       costBasis: 509.29,  category: "Satellite" },
+    { symbol: "CRWD",  shares: 1,       costBasis: 309.50,  category: "Satellite" },
+    { symbol: "ET",    shares: 34,      costBasis: 598.91,  category: "Satellite" },
+    { symbol: "ETH",   shares: 1,       costBasis: 28.03,   category: "Satellite" },
+    { symbol: "ETHE",  shares: 10,      costBasis: 252.27,  category: "Satellite" },
+    { symbol: "GBTC",  shares: 5,       costBasis: 220.30,  category: "Satellite" },
+    { symbol: "HWM",   shares: 4.0207,  costBasis: 184.24,  category: "Satellite" },
+    { symbol: "IWM",   shares: 4,       costBasis: 892.75,  category: "Core"      },
+    { symbol: "JPM",   shares: 2.0774,  costBasis: 310.21,  category: "Core"      },
+    { symbol: "KKR",   shares: 1.0029,  costBasis: 151.39,  category: "Core"      },
+    { symbol: "KWEB",  shares: 18,      costBasis: 434.76,  category: "Satellite" },
+    { symbol: "META",  shares: 1,       costBasis: 438.23,  category: "Core"      },
+    { symbol: "NVDA",  shares: 10.0042, costBasis: 484.31,  category: "Core"      },
+    { symbol: "NVO",   shares: 3,       costBasis: 375.84,  category: "Satellite" },
+    { symbol: "RIOT",  shares: 7,       costBasis: 72.80,   category: "Satellite" },
+    { symbol: "SOXX",  shares: 3,       costBasis: 752.55,  category: "Core"      },
+    { symbol: "TSLA",  shares: 1,       costBasis: 243.39,  category: "Core"      },
+    { symbol: "UNH",   shares: 1.0315,  costBasis: 530.99,  category: "Core"      },
+    { symbol: "VNQ",   shares: 3,       costBasis: 270.23,  category: "Core"      },
+    { symbol: "VTV",   shares: 3.0869,  costBasis: 498.86,  category: "Core"      },
+    { symbol: "VUG",   shares: 2.0123,  costBasis: 691.19,  category: "Core"      },
+    { symbol: "WMT",   shares: 9.2074,  costBasis: 488.03,  category: "Core"      },
+    { symbol: "XME",   shares: 5.0244,  costBasis: 376.46,  category: "Core"      },
+    { symbol: "XLP",   shares: 6,       costBasis: 479.76,  category: "Core"      },
+    { symbol: "BTC",   shares: 1,       costBasis: 24.48,   category: "Satellite" },
+  ];
+
+  const CASH = { value: 1213.88 };
+
+  const SECTOR_MAP = {
+    AAON: "Industrials",     AAPL: "Technology",
+    AMZN: "Technology",      ARM:  "Technology",
+    BABA: "Technology",      BIRK: "Consumer Discretionary",
+    CAT:  "Industrials",     CIBR: "ETF",
+    CRCL: "Cryptocurrency",  CRWD: "Technology",
+    ET:   "Energy",          ETH:  "Cryptocurrency",
+    ETHE: "Cryptocurrency",  GBTC: "Cryptocurrency",
+    HWM:  "Industrials",     IWM:  "ETF",
+    JPM:  "Financials",      KKR:  "Financials",
+    KWEB: "ETF",             META: "Technology",
+    NVDA: "Technology",      NVO:  "Healthcare",
+    RIOT: "Cryptocurrency",  SOXX: "ETF",
+    TSLA: "Technology",      UNH:  "Healthcare",
+    VNQ:  "ETF",             VTV:  "ETF",
+    VUG:  "ETF",             WMT:  "Consumer Staples",
+    XME:  "ETF",             XLP:  "ETF",
+    BTC:  "Cryptocurrency",
+  };
+
+  const ETF_MAP = {
+    CIBR: "Cybersecurity",
+    IWM:  "Small Cap",
+    KWEB: "China Tech",
+    SOXX: "Semiconductors",
+    VNQ:  "Real Estate",
+    VTV:  "Value",
+    VUG:  "Growth",
+    XME:  "Metals & Mining",
+    XLP:  "Consumer Staples",
+  };
+
+  const COLORS = {
+    "Technology":             "#4a7fc1",
+    "Consumer Discretionary": "#c17a3a",
+    "Consumer Staples":       "#6a9e82",
+    "Healthcare":             "#5a9e70",
+    "Financials":             "#b85858",
+    "Industrials":            "#8a6abf",
+    "Energy":                 "#bf9a3a",
+    "Cryptocurrency":         "#b06aaa",
+    "Real Estate":            "#7a7a68",
+    "ETF":                    "#e8c832",
+    "Cash":                   "#4a9898",
+    "Cybersecurity":          "#4a7fc1",
+    "Small Cap":              "#c17a3a",
+    "China Tech":             "#b85858",
+    "Semiconductors":         "#8a6abf",
+    "Value":                  "#5a9e70",
+    "Growth":                 "#e8c832",
+    "Metals & Mining":        "#7a7a68",
+  };
+
+  const fmt = {
+    usd:    v => '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    pct:    v => (v >= 0 ? '+' : '–') + Math.abs(v).toFixed(2) + '%',
+    shares: v => v % 1 === 0 ? v.toString() : v.toFixed(4),
+  };
+  const sign = v => v >= 0 ? '+' : '–';
+  const cls  = v => v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
+
+  async function fetchPrice(symbol) {
+    const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`);
+    const j = await r.json();
+    if (!j.c || j.c === 0) throw new Error('no price');
+    return j.c;
+  }
+
+  function renderPie(canvasId, legendId, dataObj) {
+    const labels = Object.keys(dataObj);
+    const values = Object.values(dataObj);
+    const total  = values.reduce((a, b) => a + b, 0);
+    const colors = labels.map(l => COLORS[l] || '#555');
+    new Chart(document.getElementById(canvasId).getContext('2d'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor: '#141414', borderWidth: 2 }] },
+      options: {
+        responsive: true, maintainAspectRatio: true, cutout: '52%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: ctx => ` ${ctx.label}: ${fmt.usd(ctx.raw)} (${((ctx.raw/total)*100).toFixed(1)}%)` },
+            backgroundColor: '#1a1a1a', borderColor: '#2a2a2a', borderWidth: 1,
+            titleColor: '#b8972e', bodyColor: '#d8d0c0', padding: 10,
+          }
+        }
+      }
+    });
+    document.getElementById(legendId).innerHTML = labels.map((l, i) =>
+      `<div class="legend-item">
+        <div class="legend-swatch" style="background:${colors[i]}"></div>
+        <span>${l}</span>
+        <span class="legend-pct">${((values[i]/total)*100).toFixed(1)}%</span>
+      </div>`
+    ).join('');
+  }
+
+  async function load() {
+    const tbody = document.getElementById('portfolio-body');
+    tbody.innerHTML = '';
+    let totalMV = 0, totalCB = 0;
+    const sectorTotals = {}, etfTotals = {}, rows = [];
+
+    const prices = await Promise.allSettled(HOLDINGS.map(h => fetchPrice(h.symbol)));
+
+    for (let i = 0; i < HOLDINGS.length; i++) {
+      const h = HOLDINGS[i];
+      if (prices[i].status === 'rejected') continue;
+      const price = prices[i].value;
+      const mv = price * h.shares;
+      const gain = mv - h.costBasis;
+      const pct = (gain / h.costBasis) * 100;
+      totalMV += mv; totalCB += h.costBasis;
+      const sector = SECTOR_MAP[h.symbol];
+      if (sector) sectorTotals[sector] = (sectorTotals[sector] || 0) + mv;
+      if (ETF_MAP[h.symbol]) etfTotals[ETF_MAP[h.symbol]] = (etfTotals[ETF_MAP[h.symbol]] || 0) + mv;
+      rows.push({ h, price, mv, gain, pct });
+    }
+
+    totalMV += CASH.value;
+    totalCB += CASH.value;
+    sectorTotals['Cash'] = CASH.value;
+    rows.sort((a, b) => b.mv - a.mv);
+
+    rows.forEach(({ h, price, mv, gain, pct }) => {
+      const pp = ((mv / totalMV) * 100).toFixed(1);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${h.symbol}</td>
+        <td><span class="tag-${h.category.toLowerCase()}">${h.category}</span></td>
+        <td>${fmt.shares(h.shares)}</td>
+        <td>${fmt.usd(price)}</td>
+        <td>${fmt.usd(h.costBasis)}</td>
+        <td>${fmt.usd(mv)}</td>
+        <td class="${cls(gain)}">${sign(gain)}${fmt.usd(gain)}</td>
+        <td class="${cls(gain)}">${fmt.pct(pct)}</td>
+        <td>${pp}%</td>`;
+      tbody.appendChild(tr);
+    });
+
+    const cashTr = document.createElement('tr');
+    cashTr.innerHTML = `
+      <td>CASH</td>
+      <td><span class="tag-core">Core</span></td>
+      <td>—</td><td>—</td>
+      <td>${fmt.usd(CASH.value)}</td>
+      <td>${fmt.usd(CASH.value)}</td>
+      <td class="neutral">+$0.00</td>
+      <td class="neutral">+0.00%</td>
+      <td>${((CASH.value / totalMV) * 100).toFixed(1)}%</td>`;
+    tbody.appendChild(cashTr);
+
+    const totalGain = totalMV - totalCB;
+    const totalPct  = (totalGain / totalCB) * 100;
+
+    document.getElementById('s-mv').textContent  = fmt.usd(totalMV);
+    document.getElementById('s-cb').textContent  = fmt.usd(totalCB);
+    document.getElementById('s-gl').textContent  = sign(totalGain) + fmt.usd(totalGain);
+    document.getElementById('s-pct').textContent = fmt.pct(totalPct);
+    document.getElementById('s-gl').className  = 'summary-stat-value ' + cls(totalGain);
+    document.getElementById('s-pct').className = 'summary-stat-value ' + cls(totalPct);
+
+    document.getElementById('f-cb').textContent  = fmt.usd(totalCB);
+    document.getElementById('f-mv').textContent  = fmt.usd(totalMV);
+    document.getElementById('f-gl').textContent  = sign(totalGain) + fmt.usd(totalGain);
+    document.getElementById('f-pct').textContent = fmt.pct(totalPct);
+    document.getElementById('f-gl').className = cls(totalGain);
+    document.getElementById('f-pct').className = cls(totalPct);
+
+    renderPie('sectorChart', 'sector-legend', sectorTotals);
+    renderPie('etfChart',    'etf-legend',    etfTotals);
+  }
+
+  load();
+</script>
+</body>
+</html>
