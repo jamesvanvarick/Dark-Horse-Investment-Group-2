@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research — Dark Horse Investment Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #e8c832;
+      --gold-light: #f0d84a;
+      --bg: rgba(8,8,8,0.95);
+      --bg2: #111111;
+      --border: #2a2a2a;
+      --border-gold: rgba(232,200,50,0.25);
+      --text: #e8e2d5;
+      --text-dim: #7a7060;
+      --green: #4a9e6e;
+      --red: #c45c5c;
+      --serif: 'Barlow', system-ui, sans-serif;
+      --display: 'Instrument Serif', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: #080808; }
+    body { font-family: var(--serif); background: transparent; color: var(--text); min-height: 100vh; }
+
+    .page-bg {
+      position: fixed; inset: 0; z-index: -1;
+      background-image: url('background.jpg');
+      background-size: cover; background-position: center 20%;
+      opacity: 0.15; filter: grayscale(100%); pointer-events: none;
+    }
+
+    /* ── Top Banner ── */
+    .top-banner {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,0.95); border-bottom: 1px solid var(--border);
+      padding: 0 48px; display: flex; align-items: center; height: 40px;
+    }
+    .top-banner a {
+      font-family: var(--serif); font-size: 11px; letter-spacing: 0.2em;
+      color: var(--text-dim); text-decoration: none; padding: 0 18px;
+      text-transform: uppercase; transition: color 0.2s; height: 100%;
+      display: flex; align-items: center;
+      border-bottom: 1px solid transparent; margin-bottom: -1px;
+    }
+    .top-banner a:hover { color: var(--text); }
+    .top-banner a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── Header ── */
+    header {
+      padding: 80px 48px 60px;
+      text-align: center;
+    }
+    h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 400; font-style: italic;
+      color: var(--text); line-height: 1.05;
+    }
+    .header-eyebrow {
+      font-size: 11px; letter-spacing: 0.28em;
+      color: var(--gold); text-transform: uppercase; margin-top: 16px;
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 48px 80px;
+    }
+
+    /* ── Company Card ── */
+    .company-block {
+      margin-bottom: 64px;
+    }
+
+    .company-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 4px;
+    }
+
+    .company-ticker {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-style: italic;
+      font-size: 32px;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .company-name {
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .company-meta {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      margin-bottom: 20px;
+    }
+
+    .company-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    /* ── Performance Badge ── */
+    .perf-bar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 14px 20px;
+      margin-bottom: 24px;
+    }
+
+    .perf-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .perf-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .perf-value {
+      font-size: 18px;
+      color: var(--text);
+      font-family: var(--serif);
+    }
+
+    .perf-value.positive { color: var(--green); }
+    .perf-value.negative { color: var(--red); }
+    .perf-value.loading  { color: var(--text-dim); font-size: 14px; }
+
+    .perf-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border);
+    }
+
+    .in-portfolio {
+      margin-left: auto;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 2px;
+    }
+    .in-portfolio.yes {
+      color: var(--green);
+      background: rgba(74,158,110,0.1);
+      border: 1px solid rgba(74,158,110,0.25);
+    }
+    .in-portfolio.no {
+      color: var(--text-dim);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Report List ── */
+    .reports {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .report-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .report-row + .report-row {
+      border-top: none;
+    }
+
+    .report-row:hover {
+      background: rgba(232,200,50,0.03);
+      border-color: var(--border-gold);
+    }
+
+    .report-date {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    .report-title {
+      font-size: 14px;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .report-price {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .view-pdf {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid var(--border-gold);
+      padding: 5px 12px;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .report-row:hover .view-pdf {
+      background: rgba(232,200,50,0.08);
+      border-color: rgba(232,200,50,0.5);
+    }
+
+    /* ── No reports placeholder ── */
+    .no-reports {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      padding: 20px 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 48px;
+      font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim);
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    @media (max-width: 700px) {
+      .top-banner { padding: 0 16px; }
+      header, main { padding-left: 20px; padding-right: 20px; }
+      .perf-bar { flex-wrap: wrap; }
+      .in-portfolio { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-bg"></div>
+
+<div class="top-banner">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="research.html" class="active">Research</a>
+  <a href="investors.html">Investors</a>
+</div>
+
+<header>
+  <h1>Research</h1>
+  <p class="header-eyebrow">Pitches &amp; Memos</p>
+</header>
+
+<main>
+
+  <!-- ── AAON ── -->
+  <div class="company-block">
+    <div class="company-header">
+      <span class="company-ticker">AAON</span>
+      <span class="company-name">AAON, Inc.</span>
+    </div>
+    <hr class="company-divider">
+
+    <div class="perf-bar">
+      <div class="perf-item">
+        <span class="perf-label">Written At</span>
+        <span class="perf-value">$88.29</span>
+      </div>
+      <div class="perf-divider"></div>
+      <div class="perf-item">
+        <span class="perf-label">Target</span>
+        <span class="perf-value">$107.40</span>
+      </div>
+      <div class="perf-divider"></div>
+      <div class="perf-item">
+        <span class="perf-label">Current Price</span>
+        <span class="perf-value" id="aaon-current">—</span>
+      </div>
+      <div class="perf-divider"></div>
+      <div class="perf-item">
+        <span class="perf-label">Since Aug 13, 2025</span>
+        <span class="perf-value" id="aaon-perf">—</span>
+      </div>
+      <span class="in-portfolio yes">In Portfolio</span>
+    </div>
+
+    <div class="reports">
+      <a class="report-row" href="reports/AAON_Pitch_8.13.2025_Final.pdf" target="_blank">
+        <span class="report-date">Aug 13, 2025</span>
+        <span class="report-title">Initial Pitch — BUY</span>
+        <span class="view-pdf">View PDF</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── GSL ── -->
+  <div class="company-block">
+    <div class="company-header">
+      <span class="company-ticker">GSL</span>
+      <span class="company-name">Global Ship Lease, Inc.</span>
+    </div>
+    <hr class="company-divider">
+
+    <div class="perf-bar">
+      <div class="perf-item">
+        <span class="perf-label">Written At</span>
+        <span class="perf-value">$23.18</span>
+      </div>
+      <div class="perf-divider"></div>
+      <div class="perf-item">
+        <span class="perf-label">Target</span>
+        <span class="perf-value">$58.36</span>
+      </div>
+      <div class="perf-divider"></div>
+      <div class="perf-item">
+        <span class="perf-label">Current Price</span>
+        <span class="perf-value" id="gsl-current">—</span>
+      </div>
+      <div class="perf-divider"></div>
+      <div class="perf-item">
+        <span class="perf-label">Since Mar 18, 2025</span>
+        <span class="perf-value" id="gsl-perf">—</span>
+      </div>
+      <span class="in-portfolio no">Not in Portfolio</span>
+    </div>
+
+    <div class="reports">
+      <a class="report-row" href="reports/GSL_Pitch_3.19.2025.pdf" target="_blank">
+        <span class="report-date">Mar 18, 2025</span>
+        <span class="report-title">Initial Pitch — BUY</span>
+        <span class="view-pdf">View PDF</span>
+      </a>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span>Dark Horse Investment Group &nbsp;·&nbsp; Delaware LLC</span>
+  <span>Data provided by Finnhub &nbsp;·&nbsp; Not financial advice</span>
+</footer>
+
+<script>
+  const API_KEY = 'd10qn8pr01qse6ldf5v0d10qn8pr01qse6ldf5vg';
+
+  const stocks = [
+    { symbol: 'AAON', pitchPrice: 88.29, currentEl: 'aaon-current', perfEl: 'aaon-perf' },
+    { symbol: 'GSL',  pitchPrice: 23.18, currentEl: 'gsl-current',  perfEl: 'gsl-perf'  },
+  ];
+
+  async function fetchAndRender({ symbol, pitchPrice, currentEl, perfEl }) {
+    try {
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`);
+      const j = await r.json();
+      const price = j.c;
+      if (!price || price === 0) throw new Error('no price');
+
+      const pct = ((price - pitchPrice) / pitchPrice) * 100;
+      const sign = pct >= 0 ? '+' : '';
+      const cls  = pct >= 0 ? 'positive' : 'negative';
+
+      document.getElementById(currentEl).textContent = '$' + price.toFixed(2);
+      const perfEl2 = document.getElementById(perfEl);
+      perfEl2.textContent = sign + pct.toFixed(2) + '%';
+      perfEl2.classList.add(cls);
+    } catch (e) {
+      document.getElementById(currentEl).textContent = 'N/A';
+      document.getElementById(perfEl).textContent = 'N/A';
+    }
+  }
+
+  stocks.forEach(fetchAndRender);
+</script>
+</body>
+</html>
