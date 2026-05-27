@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Dashboard — Dark Horse Investment Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --gold: #e8c832;
+      --gold-light: #f0d84a;
+      --bg: rgba(8,8,8,0.95);
+      --border: #2a2a2a;
+      --border-gold: rgba(232,200,50,0.25);
+      --text: #e8e2d5;
+      --text-dim: #7a7060;
+      --green: #4a9e6e;
+      --red: #c45c5c;
+      --serif: 'Barlow', system-ui, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: #080808; }
+    body { font-family: var(--serif); background: transparent; color: var(--text); min-height: 100vh; }
+
+    .page-bg {
+      position: fixed; inset: 0; z-index: -1;
+      background-image: url('background.jpg');
+      background-size: cover; background-position: center 20%;
+      opacity: 0.15; filter: grayscale(100%); pointer-events: none;
+    }
+
+    .top-banner {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,8,8,0.95); border-bottom: 1px solid var(--border);
+      padding: 0 48px; display: flex; align-items: center; height: 40px;
+    }
+    .top-banner a {
+      font-size: 11px; letter-spacing: 0.2em; color: var(--text-dim);
+      text-decoration: none; padding: 0 18px; text-transform: uppercase;
+      transition: color 0.2s; height: 100%; display: flex; align-items: center;
+      border-bottom: 1px solid transparent; margin-bottom: -1px;
+    }
+    .top-banner a:hover { color: var(--text); }
+    .top-banner a.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    header { padding: 64px 48px 44px; text-align: center; }
+    h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 400; font-style: italic; color: var(--text); line-height: 1.05;
+    }
+    .header-eyebrow {
+      font-size: 11px; letter-spacing: 0.28em; color: var(--gold);
+      text-transform: uppercase; margin-top: 12px;
+    }
+
+    .dash-section { max-width: 1160px; margin: 0 auto; padding: 36px 48px; }
+    .dash-section + .dash-section { padding-top: 0; }
+
+    .section-label {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 22px; color: var(--gold);
+      font-weight: 400; font-style: italic; margin-bottom: 14px;
+    }
+
+    .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .status-text { font-size: 11px; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+    .last-updated { font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; margin-top: 4px; }
+
+    /* ── Cards ── */
+    .metric-card { background: #111111; padding: 20px 22px; }
+    .metric-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+    .metric-name { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.04em; }
+    .metric-value { font-size: 24px; color: var(--text); letter-spacing: -0.01em; margin-bottom: 4px; }
+    .metric-change { font-size: 13px; }
+    .metric-sub { font-size: 10px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.06em; }
+
+    .positive { color: var(--green) !important; }
+    .negative { color: var(--red) !important; }
+    .neutral  { color: var(--text-dim) !important; }
+
+    /* ── Grids ── */
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .grid-4 .metric-card, .grid-3 .metric-card, .grid-5 .metric-card, .grid-2 .metric-card { border: none; }
+
+    /* ── Yield Curve ── */
+    .yield-layout { display: grid; grid-template-columns: 1fr 260px; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .yield-chart-wrap { background: #111111; padding: 22px 26px; }
+    .yield-chart-wrap canvas { display: block; }
+    .yield-stats { background: #111111; padding: 0; display: flex; flex-direction: column; }
+    .yield-stat { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .yield-stat:last-child { border-bottom: none; }
+    .yield-stat-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+    .yield-stat-value { font-size: 18px; color: var(--text); }
+    .spread-big { font-size: 30px; letter-spacing: -0.02em; }
+    .curve-badge {
+      display: inline-block; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 2px; margin-top: 6px;
+    }
+    .badge-inverted { background: rgba(196,92,92,0.12); color: var(--red); border: 1px solid rgba(196,92,92,0.3); }
+    .badge-normal   { background: rgba(74,158,110,0.12); color: var(--green); border: 1px solid rgba(74,158,110,0.3); }
+
+    /* ── PPI readings ── */
+    .ppi-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(42,42,42,0.7); font-size: 13px; }
+    .ppi-row:last-child { border-bottom: none; }
+    .ppi-date { font-size: 11px; color: var(--text-dim); letter-spacing: 0.06em; }
+
+    /* ── Breadth ── */
+    .breadth-card { background: #111111; border: 1px solid var(--border); padding: 20px 22px; display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+    .breadth-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+    .breadth-value { font-size: 22px; color: var(--text); margin-bottom: 4px; }
+    .breadth-interp { font-size: 12px; color: var(--text-dim); line-height: 1.55; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 28px 48px;
+      font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .dash-section { padding: 28px 20px; }
+      .top-banner { padding: 0 16px; }
+      header { padding: 48px 20px 36px; }
+      .grid-4, .grid-5 { grid-template-columns: repeat(2,1fr); }
+      .yield-layout { grid-template-columns: 1fr; }
+      .breadth-card { grid-template-columns: 1fr; }
+      footer { padding: 20px; }
+    }
+    @media (max-width: 560px) {
+      .grid-3, .grid-4, .grid-5, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-bg"></div>
+
+<div class="top-banner">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="research.html">Research</a>
+  <a href="investors.html">Investors</a>
+  <a href="dashboard.html" class="active">Dashboard</a>
+</div>
+
+<header>
+  <h1>Market Dashboard</h1>
+  <p class="header-eyebrow">Daily Macro Snapshot</p>
+</header>
+
+<!-- Status / timestamp -->
+<div class="dash-section" style="padding-bottom:0; padding-top:0;">
+  <div class="status-row">
+    <div class="status-dot"></div>
+    <span class="status-text">Live data — refreshes on page load</span>
+  </div>
+  <p class="last-updated" id="ts"></p>
+</div>
+
+<!-- ── 1. Indices + VIX ── -->
+<section class="dash-section">
+  <p class="section-label">Indices &amp; Volatility</p>
+  <div class="grid-4">
+    <div class="metric-card">
+      <p class="metric-label">S&amp;P 500 <span style="font-size:9px;opacity:.6">(SPY)</span></p>
+      <p class="metric-value" id="spy-p">—</p>
+      <p class="metric-change" id="spy-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">DJIA <span style="font-size:9px;opacity:.6">(DIA)</span></p>
+      <p class="metric-value" id="dia-p">—</p>
+      <p class="metric-change" id="dia-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Nasdaq <span style="font-size:9px;opacity:.6">(QQQ)</span></p>
+      <p class="metric-value" id="qqq-p">—</p>
+      <p class="metric-change" id="qqq-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">VIX — Volatility Index</p>
+      <p class="metric-value" id="vix-p">—</p>
+      <p class="metric-change" id="vix-c">—</p>
+      <p class="metric-sub" id="vix-lbl">—</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 2. Yield Curve ── -->
+<section class="dash-section">
+  <p class="section-label">Yield Curve</p>
+  <div class="yield-layout">
+    <div class="yield-chart-wrap">
+      <canvas id="yieldChart" height="220"></canvas>
+    </div>
+    <div class="yield-stats">
+      <div class="yield-stat">
+        <p class="yield-stat-label">10Y − 2Y Spread</p>
+        <p class="spread-big" id="spread-val">—</p>
+        <div id="spread-badge"></div>
+      </div>
+      <div class="yield-stat">
+        <p class="yield-stat-label">10-Year</p>
+        <p class="yield-stat-value" id="y10">—</p>
+      </div>
+      <div class="yield-stat">
+        <p class="yield-stat-label">2-Year</p>
+        <p class="yield-stat-value" id="y2">—</p>
+      </div>
+      <div class="yield-stat">
+        <p class="yield-stat-label">30-Year</p>
+        <p class="yield-stat-value" id="y30">—</p>
+      </div>
+      <div class="yield-stat">
+        <p class="yield-stat-label">3-Month</p>
+        <p class="yield-stat-value" id="y3m">—</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. Central Bank Rates ── -->
+<section class="dash-section">
+  <p class="section-label">Central Bank Rates</p>
+  <div class="grid-5">
+    <div class="metric-card">
+      <p class="metric-label">Fed Funds Rate</p>
+      <p class="metric-name">Federal Reserve</p>
+      <p class="metric-value" id="cb-ffr">—</p>
+      <p class="metric-sub" id="cb-ffr-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Bank Rate</p>
+      <p class="metric-name">Bank of England</p>
+      <p class="metric-value" id="cb-boe">—</p>
+      <p class="metric-sub" id="cb-boe-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Deposit Facility Rate</p>
+      <p class="metric-name">ECB</p>
+      <p class="metric-value" id="cb-ecb">—</p>
+      <p class="metric-sub" id="cb-ecb-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Policy Rate</p>
+      <p class="metric-name">Bank of Japan</p>
+      <p class="metric-value" id="cb-boj">—</p>
+      <p class="metric-sub" id="cb-boj-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">1-Year LPR</p>
+      <p class="metric-name">PBOC</p>
+      <p class="metric-value" id="cb-pboc">—</p>
+      <p class="metric-sub" id="cb-pboc-d">—</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. Labor Statistics ── -->
+<section class="dash-section">
+  <p class="section-label">Labor Statistics</p>
+  <div class="grid-3">
+    <div class="metric-card">
+      <p class="metric-label">Unemployment Rate</p>
+      <p class="metric-value" id="unrate-v">—</p>
+      <p class="metric-change" id="unrate-c">—</p>
+      <p class="metric-sub" id="unrate-d">—</p>
+      <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-emp">—</span></p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Nonfarm Payrolls</p>
+      <p class="metric-value" id="nfp-v">—</p>
+      <p class="metric-change" id="nfp-c">—</p>
+      <p class="metric-sub" id="nfp-d">—</p>
+      <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-nfp">—</span></p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Initial Jobless Claims</p>
+      <p class="metric-value" id="icsa-v">—</p>
+      <p class="metric-change" id="icsa-c">—</p>
+      <p class="metric-sub" id="icsa-d">—</p>
+      <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-claims">—</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. PPI ── -->
+<section class="dash-section">
+  <p class="section-label">Producer Price Index</p>
+  <div class="grid-2">
+    <div class="metric-card">
+      <p class="metric-label">PPI Final Demand — Recent Readings</p>
+      <div id="ppi-rows" style="margin-top:10px;">
+        <div class="ppi-row"><span class="ppi-date">Loading…</span></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Latest MoM Change</p>
+      <p class="metric-value" id="ppi-v">—</p>
+      <p class="metric-change" id="ppi-c">—</p>
+      <p class="metric-sub" id="ppi-d">—</p>
+      <p class="metric-sub" style="margin-top:12px;">Next report: <span id="next-ppi">—</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. Commodities + DXY ── -->
+<section class="dash-section">
+  <p class="section-label">Commodities &amp; Dollar</p>
+  <div class="grid-4">
+    <div class="metric-card">
+      <p class="metric-label">WTI Crude Oil <span style="font-size:9px;opacity:.6">(USO)</span></p>
+      <p class="metric-value" id="uso-p">—</p>
+      <p class="metric-change" id="uso-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Gold <span style="font-size:9px;opacity:.6">(GLD)</span></p>
+      <p class="metric-value" id="gld-p">—</p>
+      <p class="metric-change" id="gld-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Copper <span style="font-size:9px;opacity:.6">(CPER)</span></p>
+      <p class="metric-value" id="cper-p">—</p>
+      <p class="metric-change" id="cper-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">US Dollar Index <span style="font-size:9px;opacity:.6">(UUP)</span></p>
+      <p class="metric-value" id="uup-p">—</p>
+      <p class="metric-change" id="uup-c">—</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 7. Market Breadth ── -->
+<section class="dash-section">
+  <p class="section-label">Market Breadth</p>
+  <div class="breadth-card">
+    <div>
+      <p class="breadth-label">RSP / SPY Ratio</p>
+      <p class="breadth-value" id="br-ratio">—</p>
+      <p class="metric-change" id="br-chg" style="font-size:13px; margin-top:4px;">—</p>
+    </div>
+    <div>
+      <p class="breadth-label">Today's Signal</p>
+      <p class="breadth-value" id="br-dir">—</p>
+      <p class="metric-sub" id="br-sub" style="margin-top:4px;">—</p>
+    </div>
+    <div>
+      <p class="breadth-label">What This Means</p>
+      <p class="breadth-interp" id="br-interp">—</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Dark Horse Investment Group &nbsp;·&nbsp; Delaware LLC</span>
+  <span>Finnhub &amp; FRED &nbsp;·&nbsp; Not financial advice</span>
+</footer>
+
+<script>
+const FH_KEY   = 'd10qn8pr01qse6ldf5v0d10qn8pr01qse6ldf5vg';
+const FRED_KEY = '05d5ff5a8a35fcdd532b4de259a55c79';
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+async function fhq(sym) {
+  const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FH_KEY}`);
+  const j = await r.json();
+  if (!j.c || j.c === 0) throw new Error('no data');
+  return j; // { c, d, dp, pc }
+}
+
+async function fred(series, limit = 6) {
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${series}&api_key=${FRED_KEY}&limit=${limit}&sort_order=desc&file_type=json`;
+  const r = await fetch(url);
+  const j = await r.json();
+  return (j.observations || []).filter(o => o.value !== '.' && o.value !== '');
+}
+
+function set(id, html, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = html;
+  if (cls) {
+    el.className = el.className.replace(/\b(positive|negative|neutral)\b/g, '').trim();
+    el.className += ' ' + cls;
+  }
+}
+
+const usd  = v => '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct  = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+const rate = v => v.toFixed(2) + '%';
+const sign = v => v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
+const arr  = v => v > 0 ? '▲' : v < 0 ? '▼' : '→';
+const fmtDate = (str, opts) => new Date(str).toLocaleDateString('en-US', opts || { month: 'short', year: 'numeric' });
+
+// ── Next-report date helpers ──────────────────────────────────────────────
+
+function nextWeekday(dow) { // 0=Sun … 6=Sat
+  const d = new Date();
+  let diff = dow - d.getDay();
+  if (diff <= 0) diff += 7;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function firstFriNextMonth() {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
+  while (d.getDay() !== 5) d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function secondFriNextMonth() {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
+  let n = 0;
+  while (n < 2) { if (d.getDay() === 5) n++; if (n < 2) d.setDate(d.getDate() + 1); }
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── Section loaders ───────────────────────────────────────────────────────
+
+async function loadIndices() {
+  const items = [
+    ['SPY', 'spy-p', 'spy-c'],
+    ['DIA', 'dia-p', 'dia-c'],
+    ['QQQ', 'qqq-p', 'qqq-c'],
+  ];
+  const results = await Promise.allSettled(items.map(i => fhq(i[0])));
+  results.forEach((res, i) => {
+    if (res.status !== 'fulfilled') return;
+    const j = res.value;
+    set(items[i][1], usd(j.c));
+    set(items[i][2], `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
+  });
+}
+
+async function loadVIX() {
+  let j = null;
+  for (const sym of ['^VIX', 'VIXY', 'VXX']) {
+    try { j = await fhq(sym); break; } catch {}
+  }
+  if (!j) return;
+  set('vix-p', j.c.toFixed(2));
+  // VIX rising = more fear = red
+  set('vix-c', `${arr(j.d)} ${Math.abs(j.d).toFixed(2)}  ${pct(j.dp)}`, j.d > 0 ? 'negative' : 'positive');
+  const lbl = j.c < 15 ? 'Low — Complacent' : j.c < 20 ? 'Normal Range' : j.c < 30 ? 'Elevated — Caution' : j.c < 40 ? 'High — Fear' : 'Extreme — Crisis';
+  set('vix-lbl', lbl, j.c >= 20 ? 'negative' : 'neutral');
+}
+
+let yieldChart = null;
+async function loadYieldCurve() {
+  const pts = [
+    { lbl: '3M',  id: 'DGS3MO' },
+    { lbl: '6M',  id: 'DGS6MO' },
+    { lbl: '1Y',  id: 'DGS1'   },
+    { lbl: '2Y',  id: 'DGS2'   },
+    { lbl: '3Y',  id: 'DGS3'   },
+    { lbl: '5Y',  id: 'DGS5'   },
+    { lbl: '7Y',  id: 'DGS7'   },
+    { lbl: '10Y', id: 'DGS10'  },
+    { lbl: '20Y', id: 'DGS20'  },
+    { lbl: '30Y', id: 'DGS30'  },
+  ];
+  const results = await Promise.allSettled(pts.map(p => fred(p.id, 2)));
+
+  const labels = [], data = [];
+  let y10 = null, y2 = null, y30 = null, y3m = null;
+
+  results.forEach((res, i) => {
+    if (res.status !== 'fulfilled' || !res.value.length) return;
+    const v = parseFloat(res.value[0].value);
+    if (isNaN(v)) return;
+    labels.push(pts[i].lbl);
+    data.push(v);
+    if (pts[i].id === 'DGS10')  y10 = v;
+    if (pts[i].id === 'DGS2')   y2  = v;
+    if (pts[i].id === 'DGS30')  y30 = v;
+    if (pts[i].id === 'DGS3MO') y3m = v;
+  });
+
+  if (y10 !== null && y2 !== null) {
+    const sp = y10 - y2;
+    set('spread-val', sp.toFixed(2) + '%', sp >= 0 ? 'positive' : 'negative');
+    set('spread-badge', sp < 0
+      ? '<span class="curve-badge badge-inverted">Inverted</span>'
+      : '<span class="curve-badge badge-normal">Normal</span>');
+  }
+  if (y10 !== null) set('y10',  y10.toFixed(2) + '%');
+  if (y2  !== null) set('y2',   y2.toFixed(2)  + '%');
+  if (y30 !== null) set('y30',  y30.toFixed(2) + '%');
+  if (y3m !== null) set('y3m',  y3m.toFixed(2) + '%');
+
+  if (labels.length) {
+    if (yieldChart) yieldChart.destroy();
+    const ctx = document.getElementById('yieldChart').getContext('2d');
+    yieldChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          borderColor: '#e8c832',
+          backgroundColor: 'rgba(232,200,50,0.07)',
+          tension: 0.3,
+          fill: true,
+          pointBackgroundColor: '#e8c832',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: c => ` ${c.raw.toFixed(2)}%` },
+            backgroundColor: '#1a1a1a', borderColor: '#2a2a2a', borderWidth: 1,
+            titleColor: '#e8c832', bodyColor: '#d8d0c0', padding: 10,
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(42,42,42,0.6)' }, ticks: { color: '#7a7060', font: { size: 11 } } },
+          y: {
+            grid: { color: 'rgba(42,42,42,0.6)' },
+            ticks: { color: '#7a7060', font: { size: 11 }, callback: v => v.toFixed(1) + '%' },
+          }
+        }
+      }
+    });
+  }
+}
+
+async function loadCentralBanks() {
+  const banks = [
+    { series: 'FEDFUNDS',         valId: 'cb-ffr',  dateId: 'cb-ffr-d'  },
+    { series: 'IRSTCB01GBM156N',  valId: 'cb-boe',  dateId: 'cb-boe-d'  },
+    { series: 'IRSTCB01EZM156N',  valId: 'cb-ecb',  dateId: 'cb-ecb-d'  },
+    { series: 'IRSTCB01JPM156N',  valId: 'cb-boj',  dateId: 'cb-boj-d'  },
+    { series: 'INTDSRCNM193N',    valId: 'cb-pboc', dateId: 'cb-pboc-d' },
+  ];
+  await Promise.allSettled(banks.map(async b => {
+    const obs = await fred(b.series, 3);
+    if (!obs.length) return;
+    const cur  = parseFloat(obs[0].value);
+    const prev = obs[1] ? parseFloat(obs[1].value) : null;
+    if (isNaN(cur)) return;
+    const chg = prev !== null && !isNaN(prev) ? cur - prev : 0;
+    const chgHtml = chg !== 0 ? ` <span class="${sign(chg)}" style="font-size:14px;">${arr(chg)}</span>` : '';
+    set(b.valId, rate(cur) + chgHtml);
+    set(b.dateId, 'As of ' + fmtDate(obs[0].date));
+  }));
+}
+
+async function loadLabor() {
+  // Unemployment
+  try {
+    const obs = await fred('UNRATE', 4);
+    if (obs.length >= 2) {
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev;
+      set('unrate-v', cur.toFixed(1) + '%');
+      set('unrate-c', `${arr(chg)} ${chg >= 0 ? '+' : ''}${chg.toFixed(1)} pp MoM`, sign(-chg)); // rising = bad
+      set('unrate-d', 'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+
+  // Nonfarm payrolls
+  try {
+    const obs = await fred('PAYEMS', 3);
+    if (obs.length >= 2) {
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev; // in thousands
+      set('nfp-v', (chg >= 0 ? '+' : '') + chg.toFixed(0) + 'K');
+      set('nfp-c', `${arr(chg)} monthly job change`, sign(chg));
+      set('nfp-d', 'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+
+  // Initial jobless claims
+  try {
+    const obs = await fred('ICSA', 3);
+    if (obs.length >= 2) {
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev;
+      set('icsa-v', (cur / 1000).toFixed(0) + 'K');
+      set('icsa-c', `${arr(-chg)} ${Math.abs(chg / 1000).toFixed(0)}K WoW`, sign(-chg)); // fewer claims = good
+      set('icsa-d', 'Week of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
+    }
+  } catch {}
+
+  set('next-emp',    firstFriNextMonth());
+  set('next-nfp',    firstFriNextMonth());
+  set('next-claims', nextWeekday(4)); // Thursday
+}
+
+async function loadPPI() {
+  try {
+    const obs = await fred('PPIFID', 14);
+    if (obs.length < 2) return;
+
+    const cur  = parseFloat(obs[0].value);
+    const prev = parseFloat(obs[1].value);
+    const yoy  = obs[12] ? ((cur / parseFloat(obs[12].value)) - 1) * 100 : null;
+    const mom  = ((cur / prev) - 1) * 100;
+
+    set('ppi-v', yoy !== null ? yoy.toFixed(1) + '% YoY' : cur.toFixed(1));
+    set('ppi-c', `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
+    set('ppi-d', 'As of ' + fmtDate(obs[0].date));
+    set('next-ppi', secondFriNextMonth());
+
+    const rows = obs.slice(0, 5).map(o => {
+      const v = parseFloat(o.value);
+      return `<div class="ppi-row">
+        <span class="ppi-date">${fmtDate(o.date)}</span>
+        <span>${isNaN(v) ? '—' : v.toFixed(1)}</span>
+      </div>`;
+    }).join('');
+    set('ppi-rows', rows);
+  } catch {}
+}
+
+async function loadCommodities() {
+  const items = [
+    ['USO',  'uso-p',  'uso-c' ],
+    ['GLD',  'gld-p',  'gld-c' ],
+    ['CPER', 'cper-p', 'cper-c'],
+    ['UUP',  'uup-p',  'uup-c' ],
+  ];
+  await Promise.allSettled(items.map(async ([sym, pid, cid]) => {
+    const j = await fhq(sym);
+    set(pid, usd(j.c));
+    set(cid, `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
+  }));
+}
+
+async function loadBreadth() {
+  const [rsp, spy] = await Promise.all([fhq('RSP'), fhq('SPY')]);
+  const ratio     = rsp.c  / spy.c;
+  const prevRatio = rsp.pc / spy.pc;
+  const delta     = ratio - prevRatio;
+
+  set('br-ratio', ratio.toFixed(4));
+  set('br-chg', `${arr(delta)} ${delta >= 0 ? '+' : ''}${delta.toFixed(4)} today`, sign(delta));
+
+  const THRESH = 0.0003;
+  if (delta > THRESH) {
+    set('br-dir',   'Widening',              'positive');
+    set('br-sub',   'Equal weight leading',  'positive');
+    set('br-interp', 'Broad market participation — gains are not concentrated in mega-caps. Positive for the durability of any rally.');
+  } else if (delta < -THRESH) {
+    set('br-dir',   'Narrowing',             'negative');
+    set('br-sub',   'Large caps leading',    'negative');
+    set('br-interp', 'Narrow leadership — large-cap concentration is increasing. A widening RSP/SPY gap can be an early warning of fragility.');
+  } else {
+    set('br-dir',   'Flat',                  'neutral');
+    set('br-sub',   'No clear divergence',   'neutral');
+    set('br-interp', 'RSP and SPY moving in lockstep today. No meaningful breadth signal.');
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+
+document.getElementById('ts').textContent = 'Data loaded ' +
+  new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+
+Promise.allSettled([
+  loadIndices(),
+  loadVIX(),
+  loadYieldCurve(),
+  loadCentralBanks(),
+  loadLabor(),
+  loadPPI(),
+  loadCommodities(),
+  loadBreadth(),
+]);
+</script>
+</body>
+</html>
