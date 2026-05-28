@@ -343,7 +343,9 @@
       <p class="metric-label">Real GDP Growth</p>
       <p class="metric-value" id="gdp-v">—</p>
       <p class="metric-change" id="gdp-c">—</p>
-      <p class="metric-sub" id="gdp-d">Quarterly, annualized</p>
+      <p class="metric-sub" id="gdp-d">—</p>
+      <p class="metric-sub" style="margin-top:10px; color:var(--gold); letter-spacing:0.04em;">GDPNow: <span id="gdpnow-v" style="color:var(--text);">—</span></p>
+      <p class="metric-sub" id="gdpnow-d">—</p>
     </div>
     <div class="metric-card">
       <p class="metric-label">ISM Manufacturing PMI</p>
@@ -770,8 +772,18 @@ async function loadGrowthActivity() {
       const cur  = parseFloat(obs[0].value);
       const prev = parseFloat(obs[1].value);
       set('gdp-v', (cur >= 0 ? '+' : '') + cur.toFixed(1) + '%');
-      set('gdp-c', `Prior quarter: ${prev >= 0 ? '+' : ''}${prev.toFixed(1)}%`, sign(cur - prev));
+      set('gdp-c', `Prior quarter (ann.): ${prev >= 0 ? '+' : ''}${prev.toFixed(1)}%`, sign(cur - prev));
       set('gdp-d', fmtQuarter(obs[0].date) + ' · Annualized');
+    }
+  } catch {}
+
+  // Atlanta Fed GDPNow
+  try {
+    const obs = await fred('GDPNOW', 2);
+    if (obs.length >= 1) {
+      const v = parseFloat(obs[0].value);
+      set('gdpnow-v', (v >= 0 ? '+' : '') + v.toFixed(1) + '%');
+      set('gdpnow-d', 'Est. as of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
     }
   } catch {}
 
