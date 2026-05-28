@@ -259,10 +259,10 @@
   </div>
 </section>
 
-<!-- ── 4. Labor Statistics ── -->
+<!-- ── 4. Labor & Employment ── -->
 <section class="dash-section">
-  <p class="section-label">Labor Statistics</p>
-  <div class="grid-3">
+  <p class="section-label">Labor &amp; Employment</p>
+  <div class="grid-5">
     <div class="metric-card">
       <p class="metric-label">Unemployment Rate</p>
       <p class="metric-value" id="unrate-v">—</p>
@@ -278,31 +278,72 @@
       <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-nfp">—</span></p>
     </div>
     <div class="metric-card">
+      <p class="metric-label">ADP Private Payrolls</p>
+      <p class="metric-value" id="adp-v">—</p>
+      <p class="metric-change" id="adp-c">—</p>
+      <p class="metric-sub" id="adp-d">—</p>
+      <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-adp">—</span></p>
+    </div>
+    <div class="metric-card">
       <p class="metric-label">Initial Jobless Claims</p>
       <p class="metric-value" id="icsa-v">—</p>
       <p class="metric-change" id="icsa-c">—</p>
       <p class="metric-sub" id="icsa-d">—</p>
       <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-claims">—</span></p>
     </div>
+    <div class="metric-card">
+      <p class="metric-label">JOLTS Job Openings</p>
+      <p class="metric-value" id="jolts-v">—</p>
+      <p class="metric-change" id="jolts-c">—</p>
+      <p class="metric-sub" id="jolts-d">—</p>
+    </div>
   </div>
 </section>
 
-<!-- ── 5. PPI ── -->
+<!-- ── 5. Inflation ── -->
 <section class="dash-section">
-  <p class="section-label">Producer Price Index</p>
+  <p class="section-label">Inflation</p>
   <div class="grid-2">
     <div class="metric-card">
-      <p class="metric-label">PPI Final Demand — Recent Readings</p>
-      <div id="ppi-rows" style="margin-top:10px;">
-        <div class="ppi-row"><span class="ppi-date">Loading…</span></div>
-      </div>
+      <p class="metric-label">Consumer Price Index — YoY</p>
+      <p class="metric-value" id="cpi-yoy">—</p>
+      <p class="metric-change" id="cpi-mom">—</p>
+      <p class="metric-sub" id="cpi-prev">—</p>
+      <p class="metric-sub" id="cpi-d">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Latest MoM Change</p>
-      <p class="metric-value" id="ppi-v">—</p>
-      <p class="metric-change" id="ppi-c">—</p>
-      <p class="metric-sub" id="ppi-d">—</p>
-      <p class="metric-sub" style="margin-top:12px;">Next report: <span id="next-ppi">—</span></p>
+      <p class="metric-label">PCE Price Index — YoY</p>
+      <p class="metric-value" id="pce-yoy">—</p>
+      <p class="metric-change" id="pce-mom">—</p>
+      <p class="metric-sub" id="pce-prev">—</p>
+      <p class="metric-sub" id="pce-d">—</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. Growth & Activity ── -->
+<section class="dash-section">
+  <p class="section-label">Growth &amp; Activity</p>
+  <div class="grid-3">
+    <div class="metric-card">
+      <p class="metric-label">Real GDP Growth</p>
+      <p class="metric-value" id="gdp-v">—</p>
+      <p class="metric-change" id="gdp-c">—</p>
+      <p class="metric-sub" id="gdp-d">Quarterly, annualized</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">ISM Manufacturing PMI</p>
+      <p class="metric-value" id="pmi-mfg-v">—</p>
+      <p class="metric-change" id="pmi-mfg-c">—</p>
+      <p class="metric-sub" id="pmi-mfg-lbl">—</p>
+      <p class="metric-sub" id="pmi-mfg-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">ISM Services PMI</p>
+      <p class="metric-value" id="pmi-svc-v">—</p>
+      <p class="metric-change" id="pmi-svc-c">—</p>
+      <p class="metric-sub" id="pmi-svc-lbl">—</p>
+      <p class="metric-sub" id="pmi-svc-d">—</p>
     </div>
   </div>
 </section>
@@ -414,7 +455,8 @@ const pct  = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
 const rate = v => v.toFixed(2) + '%';
 const sign = v => v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
 const arr  = v => v > 0 ? '▲' : v < 0 ? '▼' : '→';
-const fmtDate = (str, opts) => new Date(str).toLocaleDateString('en-US', opts || { month: 'short', year: 'numeric' });
+const fmtDate    = (str, opts) => new Date(str).toLocaleDateString('en-US', opts || { month: 'short', year: 'numeric' });
+const fmtQuarter = str => { const d = new Date(str); return `Q${Math.floor(d.getMonth()/3)+1} ${d.getFullYear()}`; };
 
 // ── Next-report date helpers ──────────────────────────────────────────────
 
@@ -430,10 +472,9 @@ function firstFriNextMonth() {
   while (d.getDay() !== 5) d.setDate(d.getDate() + 1);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
-function secondFriNextMonth() {
+function firstWedNextMonth() {
   const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
-  let n = 0;
-  while (n < 2) { if (d.getDay() === 5) n++; if (n < 2) d.setDate(d.getDate() + 1); }
+  while (d.getDay() !== 3) d.setDate(d.getDate() + 1);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -578,7 +619,7 @@ async function loadLabor() {
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
       const chg = cur - prev;
       set('unrate-v', cur.toFixed(1) + '%');
-      set('unrate-c', `${arr(chg)} ${chg >= 0 ? '+' : ''}${chg.toFixed(1)} pp MoM`, sign(-chg)); // rising = bad
+      set('unrate-c', `${arr(chg)} ${chg >= 0 ? '+' : ''}${chg.toFixed(1)} pp MoM`, sign(-chg));
       set('unrate-d', 'As of ' + fmtDate(obs[0].date));
     }
   } catch {}
@@ -588,10 +629,22 @@ async function loadLabor() {
     const obs = await fred('PAYEMS', 3);
     if (obs.length >= 2) {
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
-      const chg = cur - prev; // in thousands
+      const chg = cur - prev;
       set('nfp-v', (chg >= 0 ? '+' : '') + chg.toFixed(0) + 'K');
       set('nfp-c', `${arr(chg)} monthly job change`, sign(chg));
       set('nfp-d', 'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+
+  // ADP private payrolls
+  try {
+    const obs = await fred('ADPWNOUSSAKFREQ', 3);
+    if (obs.length >= 2) {
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev;
+      set('adp-v', (chg >= 0 ? '+' : '') + chg.toFixed(0) + 'K');
+      set('adp-c', `${arr(chg)} monthly private jobs`, sign(chg));
+      set('adp-d', 'As of ' + fmtDate(obs[0].date));
     }
   } catch {}
 
@@ -602,39 +655,104 @@ async function loadLabor() {
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
       const chg = cur - prev;
       set('icsa-v', (cur / 1000).toFixed(0) + 'K');
-      set('icsa-c', `${arr(-chg)} ${Math.abs(chg / 1000).toFixed(0)}K WoW`, sign(-chg)); // fewer claims = good
+      set('icsa-c', `${arr(-chg)} ${Math.abs(chg / 1000).toFixed(0)}K WoW`, sign(-chg));
       set('icsa-d', 'Week of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
+    }
+  } catch {}
+
+  // JOLTS job openings
+  try {
+    const obs = await fred('JTSJOL', 3);
+    if (obs.length >= 2) {
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev;
+      set('jolts-v', (cur / 1000).toFixed(1) + 'M');
+      set('jolts-c', `${arr(chg)} ${Math.abs(chg / 1000).toFixed(1)}M MoM`, sign(chg));
+      set('jolts-d', 'As of ' + fmtDate(obs[0].date));
     }
   } catch {}
 
   set('next-emp',    firstFriNextMonth());
   set('next-nfp',    firstFriNextMonth());
-  set('next-claims', nextWeekday(4)); // Thursday
+  set('next-adp',    firstWedNextMonth());
+  set('next-claims', nextWeekday(4));
 }
 
-async function loadPPI() {
+async function loadInflation() {
+  // CPI
   try {
-    const obs = await fred('PPIFID', 14);
-    if (obs.length < 2) return;
+    const obs = await fred('CPIAUCSL', 14);
+    if (obs.length >= 13) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const yr   = parseFloat(obs[12].value);
+      const mom  = ((cur / prev) - 1) * 100;
+      const yoy  = ((cur / yr) - 1) * 100;
+      const prevMom = ((prev / parseFloat(obs[2].value)) - 1) * 100;
+      set('cpi-yoy',  yoy.toFixed(1) + '% YoY');
+      set('cpi-mom',  `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
+      set('cpi-prev', `Prior month: ${prevMom >= 0 ? '+' : ''}${prevMom.toFixed(2)}% MoM`);
+      set('cpi-d',    'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
 
-    const cur  = parseFloat(obs[0].value);
-    const prev = parseFloat(obs[1].value);
-    const yoy  = obs[12] ? ((cur / parseFloat(obs[12].value)) - 1) * 100 : null;
-    const mom  = ((cur / prev) - 1) * 100;
+  // PCE
+  try {
+    const obs = await fred('PCEPI', 14);
+    if (obs.length >= 13) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const yr   = parseFloat(obs[12].value);
+      const mom  = ((cur / prev) - 1) * 100;
+      const yoy  = ((cur / yr) - 1) * 100;
+      const prevMom = ((prev / parseFloat(obs[2].value)) - 1) * 100;
+      set('pce-yoy',  yoy.toFixed(1) + '% YoY');
+      set('pce-mom',  `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
+      set('pce-prev', `Prior month: ${prevMom >= 0 ? '+' : ''}${prevMom.toFixed(2)}% MoM`);
+      set('pce-d',    'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+}
 
-    set('ppi-v', yoy !== null ? yoy.toFixed(1) + '% YoY' : cur.toFixed(1));
-    set('ppi-c', `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
-    set('ppi-d', 'As of ' + fmtDate(obs[0].date));
-    set('next-ppi', secondFriNextMonth());
+async function loadGrowthActivity() {
+  // Real GDP growth rate (quarterly, annualized)
+  try {
+    const obs = await fred('A191RL1Q225SBEA', 3);
+    if (obs.length >= 2) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      set('gdp-v', (cur >= 0 ? '+' : '') + cur.toFixed(1) + '%');
+      set('gdp-c', `Prior quarter: ${prev >= 0 ? '+' : ''}${prev.toFixed(1)}%`, sign(cur - prev));
+      set('gdp-d', fmtQuarter(obs[0].date) + ' · Annualized');
+    }
+  } catch {}
 
-    const rows = obs.slice(0, 5).map(o => {
-      const v = parseFloat(o.value);
-      return `<div class="ppi-row">
-        <span class="ppi-date">${fmtDate(o.date)}</span>
-        <span>${isNaN(v) ? '—' : v.toFixed(1)}</span>
-      </div>`;
-    }).join('');
-    set('ppi-rows', rows);
+  // ISM Manufacturing PMI
+  try {
+    const obs = await fred('NAPM', 3);
+    if (obs.length >= 2) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const chg  = cur - prev;
+      set('pmi-mfg-v',   cur.toFixed(1));
+      set('pmi-mfg-c',   `${arr(chg)} ${chg >= 0 ? '+' : ''}${chg.toFixed(1)} vs prior month`, sign(chg));
+      set('pmi-mfg-lbl', cur >= 50 ? 'Expanding' : 'Contracting', cur >= 50 ? 'positive' : 'negative');
+      set('pmi-mfg-d',   'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+
+  // ISM Services PMI
+  try {
+    const obs = await fred('NMFCI', 3);
+    if (obs.length >= 2) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const chg  = cur - prev;
+      set('pmi-svc-v',   cur.toFixed(1));
+      set('pmi-svc-c',   `${arr(chg)} ${chg >= 0 ? '+' : ''}${chg.toFixed(1)} vs prior month`, sign(chg));
+      set('pmi-svc-lbl', cur >= 50 ? 'Expanding' : 'Contracting', cur >= 50 ? 'positive' : 'negative');
+      set('pmi-svc-d',   'As of ' + fmtDate(obs[0].date));
+    }
   } catch {}
 }
 
@@ -696,7 +814,8 @@ Promise.allSettled([
   loadYieldCurve(),
   loadCentralBanks(),
   loadLabor(),
-  loadPPI(),
+  loadInflation(),
+  loadGrowthActivity(),
   loadCommodities(),
   loadBreadth(),
 ]);
