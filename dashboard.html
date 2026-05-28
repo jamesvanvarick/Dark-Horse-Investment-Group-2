@@ -278,7 +278,7 @@
       <p class="metric-sub" style="margin-top:10px;">Next report: <span id="next-nfp">—</span></p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">ADP Private Payrolls</p>
+      <p class="metric-label">Private Payrolls (BLS)</p>
       <p class="metric-value" id="adp-v">—</p>
       <p class="metric-change" id="adp-c">—</p>
       <p class="metric-sub" id="adp-d">—</p>
@@ -305,18 +305,32 @@
   <p class="section-label">Inflation</p>
   <div class="grid-2">
     <div class="metric-card">
-      <p class="metric-label">Consumer Price Index — YoY</p>
+      <p class="metric-label">CPI — Headline</p>
       <p class="metric-value" id="cpi-yoy">—</p>
       <p class="metric-change" id="cpi-mom">—</p>
       <p class="metric-sub" id="cpi-prev">—</p>
       <p class="metric-sub" id="cpi-d">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">PCE Price Index — YoY</p>
+      <p class="metric-label">CPI — Core <span style="font-size:9px;opacity:.6">ex. Food &amp; Energy</span></p>
+      <p class="metric-value" id="ccpi-yoy">—</p>
+      <p class="metric-change" id="ccpi-mom">—</p>
+      <p class="metric-sub" id="ccpi-prev">—</p>
+      <p class="metric-sub" id="ccpi-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">PCE — Headline</p>
       <p class="metric-value" id="pce-yoy">—</p>
       <p class="metric-change" id="pce-mom">—</p>
       <p class="metric-sub" id="pce-prev">—</p>
       <p class="metric-sub" id="pce-d">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">PCE — Core <span style="font-size:9px;opacity:.6">ex. Food &amp; Energy</span></p>
+      <p class="metric-value" id="cpce-yoy">—</p>
+      <p class="metric-change" id="cpce-mom">—</p>
+      <p class="metric-sub" id="cpce-prev">—</p>
+      <p class="metric-sub" id="cpce-d">—</p>
     </div>
   </div>
 </section>
@@ -594,12 +608,12 @@ async function loadCentralBanks() {
   const banks = [
     { series: 'FEDFUNDS',         valId: 'cb-ffr',  dateId: 'cb-ffr-d'  },
     { series: 'IRSTCB01GBM156N',  valId: 'cb-boe',  dateId: 'cb-boe-d'  },
-    { series: 'IRSTCB01EZM156N',  valId: 'cb-ecb',  dateId: 'cb-ecb-d'  },
+    { series: 'ECBDFR',           valId: 'cb-ecb',  dateId: 'cb-ecb-d'  },
     { series: 'IRSTCB01JPM156N',  valId: 'cb-boj',  dateId: 'cb-boj-d'  },
     { series: 'INTDSRCNM193N',    valId: 'cb-pboc', dateId: 'cb-pboc-d' },
   ];
   await Promise.allSettled(banks.map(async b => {
-    const obs = await fred(b.series, 3);
+    const obs = await fred(b.series, 12);
     if (!obs.length) return;
     const cur  = parseFloat(obs[0].value);
     const prev = obs[1] ? parseFloat(obs[1].value) : null;
@@ -636,9 +650,9 @@ async function loadLabor() {
     }
   } catch {}
 
-  // ADP private payrolls
+  // BLS private payrolls
   try {
-    const obs = await fred('ADPWNOUSSAKFREQ', 3);
+    const obs = await fred('USPRIV', 3);
     if (obs.length >= 2) {
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
       const chg = cur - prev;
@@ -696,7 +710,24 @@ async function loadInflation() {
     }
   } catch {}
 
-  // PCE
+  // Core CPI
+  try {
+    const obs = await fred('CPILFESL', 14);
+    if (obs.length >= 13) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const yr   = parseFloat(obs[12].value);
+      const mom  = ((cur / prev) - 1) * 100;
+      const yoy  = ((cur / yr) - 1) * 100;
+      const prevMom = ((prev / parseFloat(obs[2].value)) - 1) * 100;
+      set('ccpi-yoy',  yoy.toFixed(1) + '% YoY');
+      set('ccpi-mom',  `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
+      set('ccpi-prev', `Prior month: ${prevMom >= 0 ? '+' : ''}${prevMom.toFixed(2)}% MoM`);
+      set('ccpi-d',    'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+
+  // PCE Headline
   try {
     const obs = await fred('PCEPI', 14);
     if (obs.length >= 13) {
@@ -710,6 +741,23 @@ async function loadInflation() {
       set('pce-mom',  `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
       set('pce-prev', `Prior month: ${prevMom >= 0 ? '+' : ''}${prevMom.toFixed(2)}% MoM`);
       set('pce-d',    'As of ' + fmtDate(obs[0].date));
+    }
+  } catch {}
+
+  // Core PCE
+  try {
+    const obs = await fred('PCEPILFE', 14);
+    if (obs.length >= 13) {
+      const cur  = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const yr   = parseFloat(obs[12].value);
+      const mom  = ((cur / prev) - 1) * 100;
+      const yoy  = ((cur / yr) - 1) * 100;
+      const prevMom = ((prev / parseFloat(obs[2].value)) - 1) * 100;
+      set('cpce-yoy',  yoy.toFixed(1) + '% YoY');
+      set('cpce-mom',  `${arr(mom)} ${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM`, sign(mom));
+      set('cpce-prev', `Prior month: ${prevMom >= 0 ? '+' : ''}${prevMom.toFixed(2)}% MoM`);
+      set('cpce-d',    'As of ' + fmtDate(obs[0].date));
     }
   } catch {}
 }
@@ -729,7 +777,7 @@ async function loadGrowthActivity() {
 
   // ISM Manufacturing PMI
   try {
-    const obs = await fred('NAPM', 3);
+    const obs = await fred('NAPM', 6);
     if (obs.length >= 2) {
       const cur  = parseFloat(obs[0].value);
       const prev = parseFloat(obs[1].value);
@@ -743,7 +791,7 @@ async function loadGrowthActivity() {
 
   // ISM Services PMI
   try {
-    const obs = await fred('NMFCI', 3);
+    const obs = await fred('NMFCI', 6);
     if (obs.length >= 2) {
       const cur  = parseFloat(obs[0].value);
       const prev = parseFloat(obs[1].value);
