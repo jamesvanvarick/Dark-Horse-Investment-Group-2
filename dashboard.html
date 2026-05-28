@@ -392,8 +392,8 @@ async function tdq(sym) {
 }
 
 async function fred(series, limit = 6) {
-  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${series}&api_key=${FRED_KEY}&limit=${limit}&sort_order=desc&file_type=json`;
-  const r = await fetch(url);
+  const target = `https://api.stlouisfed.org/fred/series/observations?series_id=${series}&api_key=${FRED_KEY}&limit=${limit}&sort_order=desc&file_type=json`;
+  const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(target)}`);
   const j = await r.json();
   return (j.observations || []).filter(o => o.value !== '.' && o.value !== '');
 }
