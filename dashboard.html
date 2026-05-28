@@ -225,18 +225,12 @@
 <!-- ── 3. Central Bank Rates ── -->
 <section class="dash-section">
   <p class="section-label">Central Bank Rates</p>
-  <div class="grid-5">
+  <div class="grid-4">
     <div class="metric-card">
       <p class="metric-label">Fed Funds Rate</p>
       <p class="metric-name">Federal Reserve</p>
       <p class="metric-value" id="cb-ffr">—</p>
       <p class="metric-sub" id="cb-ffr-d">—</p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">Bank Rate</p>
-      <p class="metric-name">Bank of England</p>
-      <p class="metric-value" id="cb-boe">—</p>
-      <p class="metric-sub" id="cb-boe-d">—</p>
     </div>
     <div class="metric-card">
       <p class="metric-label">Deposit Facility Rate</p>
@@ -338,13 +332,16 @@
 <!-- ── 6. Growth & Activity ── -->
 <section class="dash-section">
   <p class="section-label">Growth &amp; Activity</p>
-  <div class="grid-3">
+  <div class="grid-4">
     <div class="metric-card">
       <p class="metric-label">Real GDP Growth</p>
       <p class="metric-value" id="gdp-v">—</p>
       <p class="metric-change" id="gdp-c">—</p>
       <p class="metric-sub" id="gdp-d">—</p>
-      <p class="metric-sub" style="margin-top:10px; color:var(--gold); letter-spacing:0.04em;">GDPNow: <span id="gdpnow-v" style="color:var(--text);">—</span></p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Atlanta Fed GDPNow</p>
+      <p class="metric-value" id="gdpnow-v">—</p>
       <p class="metric-sub" id="gdpnow-d">—</p>
     </div>
     <div class="metric-card">
@@ -372,21 +369,25 @@
       <p class="metric-label">WTI Crude Oil</p>
       <p class="metric-value" id="uso-p">—</p>
       <p class="metric-change" id="uso-c">—</p>
+      <p class="metric-sub" id="uso-d">—</p>
     </div>
     <div class="metric-card">
       <p class="metric-label">Gold</p>
       <p class="metric-value" id="gld-p">—</p>
       <p class="metric-change" id="gld-c">—</p>
+      <p class="metric-sub" id="gld-d">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Silver</p>
+      <p class="metric-label">Silver <span style="font-size:9px;opacity:.6">(monthly)</span></p>
       <p class="metric-value" id="slv-p">—</p>
       <p class="metric-change" id="slv-c">—</p>
+      <p class="metric-sub" id="slv-d">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Copper</p>
+      <p class="metric-label">Copper <span style="font-size:9px;opacity:.6">(monthly)</span></p>
       <p class="metric-value" id="cper-p">—</p>
       <p class="metric-change" id="cper-c">—</p>
+      <p class="metric-sub" id="cper-d">—</p>
     </div>
     <div class="metric-card">
       <p class="metric-label">Bitcoin</p>
@@ -397,6 +398,7 @@
       <p class="metric-label">US Dollar Index</p>
       <p class="metric-value" id="uup-p">—</p>
       <p class="metric-change" id="uup-c">—</p>
+      <p class="metric-sub" id="uup-d">—</p>
     </div>
   </div>
 </section>
@@ -498,11 +500,11 @@ function firstWedNextMonth() {
 
 async function loadIndices() {
   const items = [
-    ['SPX',  'spx-p',  'spx-c' ],
-    ['DJI',  'dji-p',  'dji-c' ],
-    ['IXIC', 'comp-p', 'comp-c'],
+    ['^GSPC', 'spx-p',  'spx-c' ],
+    ['^DJI',  'dji-p',  'dji-c' ],
+    ['^IXIC', 'comp-p', 'comp-c'],
   ];
-  const results = await Promise.allSettled(items.map(i => tdq(i[0])));
+  const results = await Promise.allSettled(items.map(i => fhq(i[0])));
   results.forEach((res, i) => {
     if (res.status !== 'fulfilled') return;
     const j = res.value;
@@ -513,7 +515,7 @@ async function loadIndices() {
 
 async function loadVIX() {
   try {
-    const j = await tdq('VIX');
+    const j = await fhq('^VIX');
     set('vix-p', j.c.toFixed(2));
     set('vix-c', `${arr(j.d)} ${Math.abs(j.d).toFixed(2)}  ${pct(j.dp)}`, j.d > 0 ? 'negative' : 'positive');
     const lbl = j.c < 15 ? 'Low — Complacent' : j.c < 20 ? 'Normal Range' : j.c < 30 ? 'Elevated — Caution' : j.c < 40 ? 'High — Fear' : 'Extreme — Crisis';
@@ -609,7 +611,6 @@ async function loadYieldCurve() {
 async function loadCentralBanks() {
   const banks = [
     { series: 'FEDFUNDS',         valId: 'cb-ffr',  dateId: 'cb-ffr-d'  },
-    { series: 'IRSTCB01GBM156N',  valId: 'cb-boe',  dateId: 'cb-boe-d'  },
     { series: 'ECBDFR',           valId: 'cb-ecb',  dateId: 'cb-ecb-d'  },
     { series: 'IRSTCB01JPM156N',  valId: 'cb-boj',  dateId: 'cb-boj-d'  },
     { series: 'INTDSRCNM193N',    valId: 'cb-pboc', dateId: 'cb-pboc-d' },
@@ -772,7 +773,7 @@ async function loadGrowthActivity() {
       const cur  = parseFloat(obs[0].value);
       const prev = parseFloat(obs[1].value);
       set('gdp-v', (cur >= 0 ? '+' : '') + cur.toFixed(1) + '%');
-      set('gdp-c', `Prior quarter (ann.): ${prev >= 0 ? '+' : ''}${prev.toFixed(1)}%`, sign(cur - prev));
+      set('gdp-c', `Prior quarter: ${prev >= 0 ? '+' : ''}${prev.toFixed(1)}%`, sign(cur - prev));
       set('gdp-d', fmtQuarter(obs[0].date) + ' · Annualized');
     }
   } catch {}
@@ -817,27 +818,71 @@ async function loadGrowthActivity() {
 }
 
 async function loadCommodities() {
-  const usdItems = [
-    ['WTI',     'uso-p',  'uso-c' ],  // WTI Crude
-    ['XAU/USD', 'gld-p',  'gld-c' ],  // Gold spot
-    ['XAG/USD', 'slv-p',  'slv-c' ],  // Silver spot
-    ['COPPER',  'cper-p', 'cper-c'],  // Copper
-    ['BTC/USD', 'btc-p',  'btc-c' ],  // Bitcoin
-  ];
-  const idxItems = [
-    ['DXY', 'uup-p', 'uup-c'],  // US Dollar Index
-  ];
   await Promise.allSettled([
-    ...usdItems.map(async ([sym, pid, cid]) => {
-      const j = await tdq(sym);
-      set(pid, usd(j.c));
-      set(cid, `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
-    }),
-    ...idxItems.map(async ([sym, pid, cid]) => {
-      const j = await tdq(sym);
-      set(pid, idx(j.c));
-      set(cid, `${arr(j.d)} ${idx(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
-    }),
+
+    // WTI Crude — FRED daily (1-day lag)
+    (async () => {
+      const obs = await fred('DCOILWTICO', 3);
+      if (obs.length < 2) return;
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev, dp = (chg / prev) * 100;
+      set('uso-p', usd(cur));
+      set('uso-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
+      set('uso-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
+    })(),
+
+    // Gold — FRED daily (1-day lag)
+    (async () => {
+      const obs = await fred('GOLDAMGBD228NLBM', 3);
+      if (obs.length < 2) return;
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev, dp = (chg / prev) * 100;
+      set('gld-p', usd(cur));
+      set('gld-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
+      set('gld-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
+    })(),
+
+    // Silver — FRED monthly
+    (async () => {
+      const obs = await fred('SLVPRUSD', 3);
+      if (obs.length < 2) return;
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev, dp = (chg / prev) * 100;
+      set('slv-p', usd(cur));
+      set('slv-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
+      set('slv-d', fmtDate(obs[0].date) + ' · Monthly avg');
+    })(),
+
+    // Copper — FRED monthly (USD/MT → USD/lb)
+    (async () => {
+      const obs = await fred('PCOPPUSDM', 3);
+      if (obs.length < 2) return;
+      const cur = parseFloat(obs[0].value) / 2204.62;
+      const prev = parseFloat(obs[1].value) / 2204.62;
+      const chg = cur - prev, dp = (chg / prev) * 100;
+      set('cper-p', usd(cur) + '/lb');
+      set('cper-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
+      set('cper-d', fmtDate(obs[0].date) + ' · Monthly avg');
+    })(),
+
+    // Bitcoin — Finnhub real-time
+    (async () => {
+      const j = await fhq('BINANCE:BTCUSDT');
+      set('btc-p', usd(j.c));
+      set('btc-c', `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
+    })(),
+
+    // DXY — FRED weekly
+    (async () => {
+      const obs = await fred('DTWEXBGS', 3);
+      if (obs.length < 2) return;
+      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+      const chg = cur - prev, dp = (chg / prev) * 100;
+      set('uup-p', idx(cur));
+      set('uup-c', `${arr(chg)} ${idx(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
+      set('uup-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
+    })(),
+
   ]);
 }
 
