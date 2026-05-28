@@ -62,7 +62,7 @@
 
     .section-label {
       font-family: 'Instrument Serif', Georgia, serif;
-      font-size: 22px; color: var(--gold);
+      font-size: 26px; color: var(--gold);
       font-weight: 400; font-style: italic; margin-bottom: 14px;
     }
 
@@ -155,35 +155,30 @@
 <header>
   <h1>Market Dashboard</h1>
   <p class="header-eyebrow">Daily Macro Snapshot</p>
-</header>
-
-<!-- Status / timestamp -->
-<div class="dash-section" style="padding-bottom:0; padding-top:0;">
-  <div class="status-row">
+  <div class="status-row" style="justify-content:center; margin-top:14px;">
     <div class="status-dot"></div>
-    <span class="status-text">Live data — refreshes on page load</span>
+    <span class="status-text">Live data via Finnhub and FRED</span>
   </div>
-  <p class="last-updated" id="ts"></p>
-</div>
+</header>
 
 <!-- ── 1. Indices + VIX ── -->
 <section class="dash-section">
   <p class="section-label">Indices &amp; Volatility</p>
   <div class="grid-4">
     <div class="metric-card">
-      <p class="metric-label">S&amp;P 500 <span style="font-size:9px;opacity:.6">(SPY)</span></p>
-      <p class="metric-value" id="spy-p">—</p>
-      <p class="metric-change" id="spy-c">—</p>
+      <p class="metric-label">S&amp;P 500</p>
+      <p class="metric-value" id="spx-p">—</p>
+      <p class="metric-change" id="spx-c">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">DJIA <span style="font-size:9px;opacity:.6">(DIA)</span></p>
-      <p class="metric-value" id="dia-p">—</p>
-      <p class="metric-change" id="dia-c">—</p>
+      <p class="metric-label">DJIA</p>
+      <p class="metric-value" id="dji-p">—</p>
+      <p class="metric-change" id="dji-c">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Nasdaq <span style="font-size:9px;opacity:.6">(QQQ)</span></p>
-      <p class="metric-value" id="qqq-p">—</p>
-      <p class="metric-change" id="qqq-c">—</p>
+      <p class="metric-label">Nasdaq Composite</p>
+      <p class="metric-value" id="comp-p">—</p>
+      <p class="metric-change" id="comp-c">—</p>
     </div>
     <div class="metric-card">
       <p class="metric-label">VIX — Volatility Index</p>
@@ -312,27 +307,37 @@
   </div>
 </section>
 
-<!-- ── 6. Commodities + DXY ── -->
+<!-- ── 6. Commodities & Currencies ── -->
 <section class="dash-section">
-  <p class="section-label">Commodities &amp; Dollar</p>
-  <div class="grid-4">
+  <p class="section-label">Commodities &amp; Currencies</p>
+  <div class="grid-3">
     <div class="metric-card">
-      <p class="metric-label">WTI Crude Oil <span style="font-size:9px;opacity:.6">(USO)</span></p>
+      <p class="metric-label">WTI Crude Oil</p>
       <p class="metric-value" id="uso-p">—</p>
       <p class="metric-change" id="uso-c">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Gold <span style="font-size:9px;opacity:.6">(GLD)</span></p>
+      <p class="metric-label">Gold</p>
       <p class="metric-value" id="gld-p">—</p>
       <p class="metric-change" id="gld-c">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Copper <span style="font-size:9px;opacity:.6">(CPER)</span></p>
+      <p class="metric-label">Silver</p>
+      <p class="metric-value" id="slv-p">—</p>
+      <p class="metric-change" id="slv-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Copper</p>
       <p class="metric-value" id="cper-p">—</p>
       <p class="metric-change" id="cper-c">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">US Dollar Index <span style="font-size:9px;opacity:.6">(UUP)</span></p>
+      <p class="metric-label">Bitcoin</p>
+      <p class="metric-value" id="btc-p">—</p>
+      <p class="metric-change" id="btc-c">—</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">US Dollar Index</p>
       <p class="metric-value" id="uup-p">—</p>
       <p class="metric-change" id="uup-c">—</p>
     </div>
@@ -368,6 +373,7 @@
 <script>
 const FH_KEY   = 'd10qn8pr01qse6ldf5v0d10qn8pr01qse6ldf5vg';
 const FRED_KEY = '05d5ff5a8a35fcdd532b4de259a55c79';
+const TD_KEY   = '39ad457f43a44ac4b8676ae7f3af4c6b';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -376,6 +382,13 @@ async function fhq(sym) {
   const j = await r.json();
   if (!j.c || j.c === 0) throw new Error('no data');
   return j; // { c, d, dp, pc }
+}
+
+async function tdq(sym) {
+  const r = await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(sym)}&apikey=${TD_KEY}`);
+  const j = await r.json();
+  if (j.status === 'error' || !j.close) throw new Error(j.message || 'no data');
+  return { c: parseFloat(j.close), d: parseFloat(j.change), dp: parseFloat(j.percent_change) };
 }
 
 async function fred(series, limit = 6) {
@@ -396,6 +409,7 @@ function set(id, html, cls) {
 }
 
 const usd  = v => '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const idx  = v => Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct  = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
 const rate = v => v.toFixed(2) + '%';
 const sign = v => v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
@@ -427,30 +441,27 @@ function secondFriNextMonth() {
 
 async function loadIndices() {
   const items = [
-    ['SPY', 'spy-p', 'spy-c'],
-    ['DIA', 'dia-p', 'dia-c'],
-    ['QQQ', 'qqq-p', 'qqq-c'],
+    ['SPX',  'spx-p',  'spx-c' ],
+    ['DJI',  'dji-p',  'dji-c' ],
+    ['IXIC', 'comp-p', 'comp-c'],
   ];
-  const results = await Promise.allSettled(items.map(i => fhq(i[0])));
+  const results = await Promise.allSettled(items.map(i => tdq(i[0])));
   results.forEach((res, i) => {
     if (res.status !== 'fulfilled') return;
     const j = res.value;
-    set(items[i][1], usd(j.c));
-    set(items[i][2], `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
+    set(items[i][1], idx(j.c));
+    set(items[i][2], `${arr(j.d)} ${idx(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
   });
 }
 
 async function loadVIX() {
-  let j = null;
-  for (const sym of ['^VIX', 'VIXY', 'VXX']) {
-    try { j = await fhq(sym); break; } catch {}
-  }
-  if (!j) return;
-  set('vix-p', j.c.toFixed(2));
-  // VIX rising = more fear = red
-  set('vix-c', `${arr(j.d)} ${Math.abs(j.d).toFixed(2)}  ${pct(j.dp)}`, j.d > 0 ? 'negative' : 'positive');
-  const lbl = j.c < 15 ? 'Low — Complacent' : j.c < 20 ? 'Normal Range' : j.c < 30 ? 'Elevated — Caution' : j.c < 40 ? 'High — Fear' : 'Extreme — Crisis';
-  set('vix-lbl', lbl, j.c >= 20 ? 'negative' : 'neutral');
+  try {
+    const j = await tdq('VIX');
+    set('vix-p', j.c.toFixed(2));
+    set('vix-c', `${arr(j.d)} ${Math.abs(j.d).toFixed(2)}  ${pct(j.dp)}`, j.d > 0 ? 'negative' : 'positive');
+    const lbl = j.c < 15 ? 'Low — Complacent' : j.c < 20 ? 'Normal Range' : j.c < 30 ? 'Elevated — Caution' : j.c < 40 ? 'High — Fear' : 'Extreme — Crisis';
+    set('vix-lbl', lbl, j.c >= 20 ? 'negative' : 'neutral');
+  } catch {}
 }
 
 let yieldChart = null;
@@ -628,17 +639,28 @@ async function loadPPI() {
 }
 
 async function loadCommodities() {
-  const items = [
-    ['USO',  'uso-p',  'uso-c' ],
-    ['GLD',  'gld-p',  'gld-c' ],
-    ['CPER', 'cper-p', 'cper-c'],
-    ['UUP',  'uup-p',  'uup-c' ],
+  const usdItems = [
+    ['WTI',     'uso-p',  'uso-c' ],  // WTI Crude
+    ['XAU/USD', 'gld-p',  'gld-c' ],  // Gold spot
+    ['XAG/USD', 'slv-p',  'slv-c' ],  // Silver spot
+    ['COPPER',  'cper-p', 'cper-c'],  // Copper
+    ['BTC/USD', 'btc-p',  'btc-c' ],  // Bitcoin
   ];
-  await Promise.allSettled(items.map(async ([sym, pid, cid]) => {
-    const j = await fhq(sym);
-    set(pid, usd(j.c));
-    set(cid, `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
-  }));
+  const idxItems = [
+    ['DXY', 'uup-p', 'uup-c'],  // US Dollar Index
+  ];
+  await Promise.allSettled([
+    ...usdItems.map(async ([sym, pid, cid]) => {
+      const j = await tdq(sym);
+      set(pid, usd(j.c));
+      set(cid, `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
+    }),
+    ...idxItems.map(async ([sym, pid, cid]) => {
+      const j = await tdq(sym);
+      set(pid, idx(j.c));
+      set(cid, `${arr(j.d)} ${idx(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
+    }),
+  ]);
 }
 
 async function loadBreadth() {
@@ -667,9 +689,6 @@ async function loadBreadth() {
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────
-
-document.getElementById('ts').textContent = 'Data loaded ' +
-  new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
 Promise.allSettled([
   loadIndices(),
