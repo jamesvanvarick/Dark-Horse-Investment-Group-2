@@ -395,7 +395,7 @@
       <p class="metric-change" id="btc-c">—</p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">US Dollar Index</p>
+      <p class="metric-label">US Dollar Index <span style="font-size:9px;opacity:.6">(Fed, Major Curr.)</span></p>
       <p class="metric-value" id="uup-p">—</p>
       <p class="metric-change" id="uup-c">—</p>
       <p class="metric-sub" id="uup-d">—</p>
@@ -500,26 +500,30 @@ function firstWedNextMonth() {
 
 async function loadIndices() {
   const items = [
-    ['^GSPC', 'spx-p',  'spx-c' ],
-    ['^DJI',  'dji-p',  'dji-c' ],
-    ['^IXIC', 'comp-p', 'comp-c'],
+    { series: 'SP500',     pid: 'spx-p',  cid: 'spx-c'  },
+    { series: 'DJIA',      pid: 'dji-p',  cid: 'dji-c'  },
+    { series: 'NASDAQCOM', pid: 'comp-p', cid: 'comp-c' },
   ];
-  const results = await Promise.allSettled(items.map(i => fhq(i[0])));
-  results.forEach((res, i) => {
-    if (res.status !== 'fulfilled') return;
-    const j = res.value;
-    set(items[i][1], idx(j.c));
-    set(items[i][2], `${arr(j.d)} ${idx(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
-  });
+  await Promise.allSettled(items.map(async it => {
+    const obs = await fred(it.series, 3);
+    if (obs.length < 2) return;
+    const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+    const chg = cur - prev, dp = (chg / prev) * 100;
+    set(it.pid, idx(cur));
+    set(it.cid, `${arr(chg)} ${idx(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
+  }));
 }
 
 async function loadVIX() {
   try {
-    const j = await fhq('^VIX');
-    set('vix-p', j.c.toFixed(2));
-    set('vix-c', `${arr(j.d)} ${Math.abs(j.d).toFixed(2)}  ${pct(j.dp)}`, j.d > 0 ? 'negative' : 'positive');
-    const lbl = j.c < 15 ? 'Low — Complacent' : j.c < 20 ? 'Normal Range' : j.c < 30 ? 'Elevated — Caution' : j.c < 40 ? 'High — Fear' : 'Extreme — Crisis';
-    set('vix-lbl', lbl, j.c >= 20 ? 'negative' : 'neutral');
+    const obs = await fred('VIXCLS', 3);
+    if (obs.length < 2) return;
+    const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
+    const chg = cur - prev, dp = (chg / prev) * 100;
+    set('vix-p', cur.toFixed(2));
+    set('vix-c', `${arr(chg)} ${Math.abs(chg).toFixed(2)}  ${pct(dp)}`, chg > 0 ? 'negative' : 'positive');
+    const lbl = cur < 15 ? 'Low — Complacent' : cur < 20 ? 'Normal Range' : cur < 30 ? 'Elevated — Caution' : cur < 40 ? 'High — Fear' : 'Extreme — Crisis';
+    set('vix-lbl', lbl, cur >= 20 ? 'negative' : 'neutral');
   } catch {}
 }
 
@@ -831,9 +835,9 @@ async function loadCommodities() {
       set('uso-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
     })(),
 
-    // Gold — FRED daily (1-day lag)
+    // Gold — FRED daily LBMA AM fix (1-day lag)
     (async () => {
-      const obs = await fred('GOLDAMGBD228NLBM', 3);
+      const obs = await fred('GOLDAMGBD228NLBM', 5);
       if (obs.length < 2) return;
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
       const chg = cur - prev, dp = (chg / prev) * 100;
@@ -842,9 +846,9 @@ async function loadCommodities() {
       set('gld-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
     })(),
 
-    // Silver — FRED monthly
+    // Silver — FRED monthly (IMF Global Price)
     (async () => {
-      const obs = await fred('SLVPRUSD', 3);
+      const obs = await fred('PSILVERUSDM', 3);
       if (obs.length < 2) return;
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
       const chg = cur - prev, dp = (chg / prev) * 100;
@@ -862,7 +866,7 @@ async function loadCommodities() {
       const chg = cur - prev, dp = (chg / prev) * 100;
       set('cper-p', usd(cur) + '/lb');
       set('cper-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
-      set('cper-d', fmtDate(obs[0].date) + ' · Monthly avg');
+      set('cper-d', fmtDate(obs[0].date) + ' · LME monthly avg');
     })(),
 
     // Bitcoin — Finnhub real-time
@@ -872,9 +876,9 @@ async function loadCommodities() {
       set('btc-c', `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
     })(),
 
-    // DXY — FRED weekly
+    // Dollar Index — FRED weekly (Major Currencies, Fed)
     (async () => {
-      const obs = await fred('DTWEXBGS', 3);
+      const obs = await fred('DTWEXM', 3);
       if (obs.length < 2) return;
       const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
       const chg = cur - prev, dp = (chg / prev) * 100;
