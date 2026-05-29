@@ -603,6 +603,9 @@
       const pp = ((mv / totalMV) * 100).toFixed(1);
       const tr = document.createElement('tr');
       tr.dataset.category = h.category.toLowerCase();
+      tr.dataset.mv   = mv;
+      tr.dataset.gain = gain;
+      tr.dataset.cb   = h.costBasis;
       tr.innerHTML = `
         <td>${h.symbol}</td>
         <td><span class="tag-${h.category.toLowerCase()}">${h.category}</span></td>
@@ -650,6 +653,32 @@
     renderPie('etfChart',    'etf-legend',    etfTotals);
   }
 
+  function updateFooter(filter) {
+    let sumMV = 0, sumGain = 0, sumCB = 0;
+    document.querySelectorAll('#portfolio-body tr').forEach(tr => {
+      if (tr.dataset.category === 'cash') return;
+      if (filter !== 'all' && tr.dataset.category !== filter) return;
+      sumMV   += parseFloat(tr.dataset.mv   || 0);
+      sumGain += parseFloat(tr.dataset.gain || 0);
+      sumCB   += parseFloat(tr.dataset.cb   || 0);
+    });
+    let displayMV, displayGain, displayPct;
+    if (filter === 'all') {
+      displayMV   = sumMV + CASH.value;
+      displayGain = displayMV - NET_INVESTED;
+      displayPct  = (displayGain / NET_INVESTED) * 100;
+    } else {
+      displayMV   = sumMV;
+      displayGain = sumGain;
+      displayPct  = sumCB > 0 ? (sumGain / sumCB) * 100 : 0;
+    }
+    document.getElementById('f-mv').textContent  = fmt.usd(displayMV);
+    document.getElementById('f-gl').textContent  = sign(displayGain) + fmt.usd(displayGain);
+    document.getElementById('f-pct').textContent = fmt.pct(displayPct);
+    document.getElementById('f-gl').className = cls(displayGain);
+    document.getElementById('f-pct').className = cls(displayPct);
+  }
+
   load();
 
   document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -661,6 +690,7 @@
         const cat = tr.dataset.category;
         tr.style.display = (filter === 'all' || cat === filter || cat === 'cash') ? '' : 'none';
       });
+      updateFooter(filter);
     });
   });
 </script>
