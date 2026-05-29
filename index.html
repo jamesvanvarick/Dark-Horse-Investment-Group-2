@@ -473,7 +473,7 @@
     { symbol: "BTC",   shares: 1,       costBasis: 24.48,   category: "Satellite" },
   ];
 
-  const CASH = { value: 1213.88 };
+  const CASH = { value: 179.00 };
 
   const SECTOR_MAP = {
     AAON: "Industrials",     AAPL: "Technology",
@@ -620,16 +620,16 @@
     cashTr.dataset.category = 'cash';
     cashTr.innerHTML = `
       <td>CASH</td>
-      <td><span class="tag-core">Core</span></td>
+      <td>—</td>
       <td>—</td><td>—</td>
+      <td>—</td>
       <td>${fmt.usd(CASH.value)}</td>
-      <td>${fmt.usd(CASH.value)}</td>
-      <td class="neutral">+$0.00</td>
-      <td class="neutral">+0.00%</td>
+      <td class="neutral">—</td>
+      <td class="neutral">—</td>
       <td>${((CASH.value / totalMV) * 100).toFixed(1)}%</td>`;
     tbody.appendChild(cashTr);
 
-    const totalGain = totalMV - totalCB;
+    const totalGain = totalMV - NET_INVESTED;
     const totalPct  = (totalGain / NET_INVESTED) * 100;
 
     document.getElementById('s-mv').textContent   = fmt.usd(totalMV);
@@ -640,7 +640,6 @@
     document.getElementById('s-gl').className   = 'summary-stat-value ' + cls(totalGain);
     document.getElementById('s-pct').className  = 'summary-stat-value ' + cls(totalPct);
 
-    document.getElementById('f-cb').textContent  = fmt.usd(NET_INVESTED);
     document.getElementById('f-mv').textContent  = fmt.usd(totalMV);
     document.getElementById('f-gl').textContent  = sign(totalGain) + fmt.usd(totalGain);
     document.getElementById('f-pct').textContent = fmt.pct(totalPct);
