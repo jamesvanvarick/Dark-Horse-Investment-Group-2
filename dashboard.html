@@ -361,48 +361,6 @@
   </div>
 </section>
 
-<!-- ── 6. Commodities & Currencies ── -->
-<section class="dash-section">
-  <p class="section-label">Commodities &amp; Currencies</p>
-  <div class="grid-3">
-    <div class="metric-card">
-      <p class="metric-label">WTI Crude Oil</p>
-      <p class="metric-value" id="uso-p">—</p>
-      <p class="metric-change" id="uso-c">—</p>
-      <p class="metric-sub" id="uso-d">—</p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">Gold</p>
-      <p class="metric-value" id="gld-p">—</p>
-      <p class="metric-change" id="gld-c">—</p>
-      <p class="metric-sub" id="gld-d">—</p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">Silver <span style="font-size:9px;opacity:.6">(monthly)</span></p>
-      <p class="metric-value" id="slv-p">—</p>
-      <p class="metric-change" id="slv-c">—</p>
-      <p class="metric-sub" id="slv-d">—</p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">Copper <span style="font-size:9px;opacity:.6">(monthly)</span></p>
-      <p class="metric-value" id="cper-p">—</p>
-      <p class="metric-change" id="cper-c">—</p>
-      <p class="metric-sub" id="cper-d">—</p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">Bitcoin</p>
-      <p class="metric-value" id="btc-p">—</p>
-      <p class="metric-change" id="btc-c">—</p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">US Dollar Index <span style="font-size:9px;opacity:.6">(Fed, Major Curr.)</span></p>
-      <p class="metric-value" id="uup-p">—</p>
-      <p class="metric-change" id="uup-c">—</p>
-      <p class="metric-sub" id="uup-d">—</p>
-    </div>
-  </div>
-</section>
-
 <!-- ── 7. Market Breadth ── -->
 <section class="dash-section">
   <p class="section-label">Market Breadth</p>
@@ -821,75 +779,6 @@ async function loadGrowthActivity() {
   } catch {}
 }
 
-async function loadCommodities() {
-  await Promise.allSettled([
-
-    // WTI Crude — FRED daily (1-day lag)
-    (async () => {
-      const obs = await fred('DCOILWTICO', 3);
-      if (obs.length < 2) return;
-      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
-      const chg = cur - prev, dp = (chg / prev) * 100;
-      set('uso-p', usd(cur));
-      set('uso-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
-      set('uso-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
-    })(),
-
-    // Gold — FRED daily LBMA AM fix (1-day lag)
-    (async () => {
-      const obs = await fred('GOLDAMGBD228NLBM', 5);
-      if (obs.length < 2) return;
-      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
-      const chg = cur - prev, dp = (chg / prev) * 100;
-      set('gld-p', usd(cur));
-      set('gld-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
-      set('gld-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
-    })(),
-
-    // Silver — FRED monthly (IMF Global Price)
-    (async () => {
-      const obs = await fred('PSILVERUSDM', 3);
-      if (obs.length < 2) return;
-      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
-      const chg = cur - prev, dp = (chg / prev) * 100;
-      set('slv-p', usd(cur));
-      set('slv-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
-      set('slv-d', fmtDate(obs[0].date) + ' · Monthly avg');
-    })(),
-
-    // Copper — FRED monthly (USD/MT → USD/lb)
-    (async () => {
-      const obs = await fred('PCOPPUSDM', 3);
-      if (obs.length < 2) return;
-      const cur = parseFloat(obs[0].value) / 2204.62;
-      const prev = parseFloat(obs[1].value) / 2204.62;
-      const chg = cur - prev, dp = (chg / prev) * 100;
-      set('cper-p', usd(cur) + '/lb');
-      set('cper-c', `${arr(chg)} ${usd(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
-      set('cper-d', fmtDate(obs[0].date) + ' · LME monthly avg');
-    })(),
-
-    // Bitcoin — Finnhub real-time
-    (async () => {
-      const j = await fhq('BINANCE:BTCUSDT');
-      set('btc-p', usd(j.c));
-      set('btc-c', `${arr(j.d)} ${usd(Math.abs(j.d))}  ${pct(j.dp)}`, sign(j.d));
-    })(),
-
-    // Dollar Index — FRED weekly (Major Currencies, Fed)
-    (async () => {
-      const obs = await fred('DTWEXM', 3);
-      if (obs.length < 2) return;
-      const cur = parseFloat(obs[0].value), prev = parseFloat(obs[1].value);
-      const chg = cur - prev, dp = (chg / prev) * 100;
-      set('uup-p', idx(cur));
-      set('uup-c', `${arr(chg)} ${idx(Math.abs(chg))}  ${pct(dp)}`, sign(chg));
-      set('uup-d', 'As of ' + fmtDate(obs[0].date, { month: 'short', day: 'numeric' }));
-    })(),
-
-  ]);
-}
-
 async function loadBreadth() {
   const [rsp, spy] = await Promise.all([fhq('RSP'), fhq('SPY')]);
   const ratio     = rsp.c  / spy.c;
@@ -925,7 +814,6 @@ Promise.allSettled([
   loadLabor(),
   loadInflation(),
   loadGrowthActivity(),
-  loadCommodities(),
   loadBreadth(),
 ]);
 </script>
