@@ -172,22 +172,39 @@
     /* ── Summary bar ── */
     .summary-bar {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       border: 1px solid var(--border);
-      margin-bottom: 32px;
+      margin-bottom: 16px;
       background: #111111;
     }
-    .summary-stat { padding: 20px 22px; border-right: 1px solid var(--border); background: #111111; }
+    .summary-stat { padding: 18px 20px; border-right: 1px solid var(--border); background: #111111; }
     .summary-stat:last-child { border-right: none; }
     .summary-stat-label {
       font-family: var(--serif);
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--text-dim);
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
-    .summary-stat-value { font-family: var(--serif); font-size: 22px; color: var(--text); }
+    .summary-stat-value { font-family: var(--serif); font-size: 20px; color: var(--text); }
+
+    /* ── Filter row ── */
+    .filter-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .filter-btn {
+      font-family: var(--serif); font-size: 10px; letter-spacing: 0.16em;
+      text-transform: uppercase; padding: 5px 14px; background: transparent;
+      color: var(--text-dim); border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn:hover { color: var(--text); border-color: #444; }
+    .filter-btn.active { color: var(--gold); border-color: var(--gold); background: rgba(232,200,50,0.06); }
+
+    /* ── Portfolio note ── */
+    .portfolio-note {
+      font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em;
+      margin-top: 10px;
+    }
 
     /* ── Status ── */
     .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
@@ -223,8 +240,8 @@
     tbody td { padding: 10px 14px; text-align: right; color: var(--text); white-space: nowrap; }
     tbody td:first-child { text-align: left; color: var(--gold-light); }
     .tag-core, .tag-satellite {
-      display: inline-block; font-size: 8px; letter-spacing: 0.12em;
-      text-transform: uppercase; padding: 2px 6px; border-radius: 2px;
+      display: inline-block; font-size: 8px; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
     }
     .tag-core     { background: rgba(74,158,110,0.12); color: var(--green); border: 1px solid rgba(74,158,110,0.25); }
     .tag-satellite{ background: rgba(184,151,46,0.1);  color: var(--gold);  border: 1px solid rgba(184,151,46,0.2); }
@@ -277,10 +294,11 @@
       nav { padding: 0 16px; }
       nav a { padding: 14px 10px; font-size: 10px; }
       header, section { padding: 40px 20px; }
-      .summary-bar { grid-template-columns: repeat(2, 1fr); }
-      .summary-stat:nth-child(2) { border-right: none; }
+      .summary-bar { grid-template-columns: repeat(3, 1fr); }
+      .summary-stat:nth-child(3) { border-right: none; }
       .summary-stat:nth-child(1),
-      .summary-stat:nth-child(2) { border-bottom: 1px solid var(--border); }
+      .summary-stat:nth-child(2),
+      .summary-stat:nth-child(3) { border-bottom: 1px solid var(--border); }
     }
   </style>
 </head>
@@ -337,17 +355,26 @@
       <p class="summary-stat-value" id="s-mv">—</p>
     </div>
     <div class="summary-stat">
-      <p class="summary-stat-label">Cost Basis</p>
+      <p class="summary-stat-label">Net Invested</p>
       <p class="summary-stat-value" id="s-cb">—</p>
     </div>
     <div class="summary-stat">
-      <p class="summary-stat-label">Gain / Loss</p>
+      <p class="summary-stat-label">Total Gain</p>
       <p class="summary-stat-value" id="s-gl">—</p>
     </div>
     <div class="summary-stat">
       <p class="summary-stat-label">Return</p>
       <p class="summary-stat-value" id="s-pct">—</p>
     </div>
+    <div class="summary-stat">
+      <p class="summary-stat-label">Cash</p>
+      <p class="summary-stat-value" id="s-cash">—</p>
+    </div>
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="core">Core</button>
+    <button class="filter-btn" data-filter="satellite">Satellite</button>
   </div>
   <div class="table-wrap">
     <table>
@@ -380,6 +407,7 @@
       </tfoot>
     </table>
   </div>
+  <p class="portfolio-note">Return calculated on net invested capital ($10,816)</p>
 </section>
 
 <!-- Exposure -->
@@ -405,7 +433,8 @@
 </footer>
 
 <script>
-  const API_KEY = 'd10qn8pr01qse6ldf5v0d10qn8pr01qse6ldf5vg';
+  const API_KEY      = 'd10qn8pr01qse6ldf5v0d10qn8pr01qse6ldf5vg';
+  const NET_INVESTED = 10816;
 
   const HOLDINGS = [
     { symbol: "AAON",  shares: 5,       costBasis: 428.53,  category: "Satellite" },
@@ -573,6 +602,7 @@
     rows.forEach(({ h, price, mv, gain, pct }) => {
       const pp = ((mv / totalMV) * 100).toFixed(1);
       const tr = document.createElement('tr');
+      tr.dataset.category = h.category.toLowerCase();
       tr.innerHTML = `
         <td>${h.symbol}</td>
         <td><span class="tag-${h.category.toLowerCase()}">${h.category}</span></td>
@@ -587,6 +617,7 @@
     });
 
     const cashTr = document.createElement('tr');
+    cashTr.dataset.category = 'cash';
     cashTr.innerHTML = `
       <td>CASH</td>
       <td><span class="tag-core">Core</span></td>
@@ -599,16 +630,17 @@
     tbody.appendChild(cashTr);
 
     const totalGain = totalMV - totalCB;
-    const totalPct  = (totalGain / totalCB) * 100;
+    const totalPct  = (totalGain / NET_INVESTED) * 100;
 
-    document.getElementById('s-mv').textContent  = fmt.usd(totalMV);
-    document.getElementById('s-cb').textContent  = fmt.usd(totalCB);
-    document.getElementById('s-gl').textContent  = sign(totalGain) + fmt.usd(totalGain);
-    document.getElementById('s-pct').textContent = fmt.pct(totalPct);
-    document.getElementById('s-gl').className  = 'summary-stat-value ' + cls(totalGain);
-    document.getElementById('s-pct').className = 'summary-stat-value ' + cls(totalPct);
+    document.getElementById('s-mv').textContent   = fmt.usd(totalMV);
+    document.getElementById('s-cb').textContent   = fmt.usd(NET_INVESTED);
+    document.getElementById('s-gl').textContent   = sign(totalGain) + fmt.usd(totalGain);
+    document.getElementById('s-pct').textContent  = fmt.pct(totalPct);
+    document.getElementById('s-cash').textContent = fmt.usd(CASH.value);
+    document.getElementById('s-gl').className   = 'summary-stat-value ' + cls(totalGain);
+    document.getElementById('s-pct').className  = 'summary-stat-value ' + cls(totalPct);
 
-    document.getElementById('f-cb').textContent  = fmt.usd(totalCB);
+    document.getElementById('f-cb').textContent  = fmt.usd(NET_INVESTED);
     document.getElementById('f-mv').textContent  = fmt.usd(totalMV);
     document.getElementById('f-gl').textContent  = sign(totalGain) + fmt.usd(totalGain);
     document.getElementById('f-pct').textContent = fmt.pct(totalPct);
@@ -620,6 +652,18 @@
   }
 
   load();
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('#portfolio-body tr').forEach(tr => {
+        const cat = tr.dataset.category;
+        tr.style.display = (filter === 'all' || cat === filter || cat === 'cash') ? '' : 'none';
+      });
+    });
+  });
 </script>
 </body>
 </html>
